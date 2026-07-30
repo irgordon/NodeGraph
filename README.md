@@ -10,22 +10,64 @@
 
 ---
 
-<p align="center"><b>Turn research papers into verifiable knowledge graphs with AI.</b></p>
+<p align="center"><b>Read one paper closely. See what many papers say together.</b></p>
 
-Point an AI agent (Claude Code, Codex, Cursor, Antigravity) at a PDF and it reads the paper and builds the whole graph itself, linking every claim back to the exact quote it came from. Prefer to build it yourself? Create a blank `.nodegraph.json` file and use the exact same interactive canvas by hand, no agent required.
+NodeGraph turns research PDFs into visual, source-backed notes. Use an AI agent to build a graph, or create one by hand. Each claim can link to an exact quote, so you can open the source PDF and check the text for yourself.
 
-<p align="center"><b>Don't trust AI summaries. Verify every claim against the original paper in one click.</b></p>
+This fork is growing NodeGraph into a multi-paper research workspace. The goal is to help researchers move from reading separate papers to comparing a full body of work in one clear view.
+
+> **Development status:** NodeGraph 0.7.2 is a working VS Code extension for single-paper analysis. The proposed multi-paper tools are planned and are not in the app yet. Existing `.nodegraph.json` files will keep their current format and will continue to open and export as they do today.
 
 ---
 
-## A Quick Look
+## Built for Doctoral Research
+
+The proposed workspace is designed to support doctoral-level work that examines many PDFs and analyzes the papers together. It will help researchers compare claims, methods, populations, findings, and open questions across a large reading list without losing the link to the original source.
+
+The planned workflow will help you:
+
+- Bring many paper graphs into one research project.
+- Compare papers by topic, method, population, theory, setting, and finding.
+- See where studies agree, disagree, add limits, or use different definitions.
+- Open any major claim and follow it back to the finding, exact quote, and source PDF.
+- Review AI suggestions before they become accepted research notes.
+- Test a possible research gap against the full paper collection before relying on it.
+- Connect research gaps to research questions and evidence.
+- Build chapter outlines, comparison tables, and review reports from approved work.
+
+This approach is meant for literature reviews, dissertation planning, qualifying papers, evidence reviews, and other projects where the quality of the source trail matters as much as the final insight.
+
+### What is ready and what is proposed
+
+| Available in NodeGraph 0.7.2 | Proposed for the multi-paper workspace |
+|---|---|
+| Visual editing for one paper at a time | One project for many papers and PDFs |
+| Exact quotes stored with paper notes | Shared comparison fields across papers |
+| One-click quote checks in the source PDF | Paper-by-topic and paper-by-method views |
+| Manual and AI-assisted graph creation | Cross-paper claims, conflicts, gaps, and research questions |
+| Search, rich tables, math, and images | Researcher review queues and a record of key decisions |
+| Self-contained HTML export for one graph | Comparison tables, claim lists, outlines, and research reports |
+
+The first phase will add the project structure, paper list, cross-paper search, file checks, and source-link checks. Later phases will add comparison views, research claims, conflict review, gap testing, research-question support, and dissertation planning.
+
+Read the proposed product and technical plans:
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Research model](docs/SYNTHESIS_DOMAIN_MODEL.md)
+- [Research workflows](docs/SYNTHESIS_WORKFLOWS.md)
+- [Roadmap](docs/ROADMAP.md)
+
+---
+
+## See NodeGraph in Action
 
 <p align="center">
   <img src="resources/demo-ex4.webp" width="100%" alt="Full agent run building the demo/ex4 nodegraph from the 3D Gaussian Splatting paper, sped up, looping" />
 </p>
-<p align="center"><b>An agent reading a paper it had never seen before and building the full nodegraph end to end, sped up — see Benchmark below for the real numbers</b></p>
+<p align="center"><b>An AI agent reads one paper and builds a complete graph linked to the source.</b></p>
 
-**Getting there takes four steps:**
+**Start with one paper in four steps:**
+
 1. Install **NodeGraph** from the VS Code Marketplace
 2. Right-click your paper's folder and run `NodeGraph: Copy Agent Spec to Workspace`
 3. Paste the generated `.prompt/english.md` (or `korean.md`) into your agent, filling in the PDF's path
@@ -33,26 +75,23 @@ Point an AI agent (Claude Code, Codex, Cursor, Antigravity) at a PDF and it read
 
 ---
 
-## Perfect for
+## Why Researchers Use NodeGraph
 
-- **Actually understanding a paper**, not skimming it, by pulling the argument back into the ideas it converged from
-- **AI-assisted notes without the hallucination risk**, since every claim traces back to the exact source quote
-- **Papers full of math and tables**, where other note tools garble LaTeX inside a table and this one does not
-- **Sharing notes outside VS Code**, since every graph exports to one self-contained HTML file, no extension needed
+- **Understand the full argument.** Break a paper into claims, questions, evidence, and links instead of keeping a flat summary.
+- **Check AI work.** Keep the source quote beside the note and jump to the matching text in the PDF.
+- **Handle technical papers.** Put math, tables, images, and notes together in the same visual card.
+- **Keep control of your files.** Store the graph as plain JSON on your computer, with no account or online service.
+- **Share the result.** Export a graph as one interactive HTML file that opens in a browser.
 
 ---
 
-## Motivation
+## From Reading to Understanding
 
-Writing a paper means **diverging** first (exploring branches, dead ends, alternative framings), then **converging** that down into one clean, linear narrative. Actually dissecting a paper, understanding *why* each choice was made and not another, means running that process in reverse: pulling the converged text back apart into the diverged ideas it came from. That's naturally **a node graph, not a linear document**. That's what led to this mind-map-shaped approach in the first place.
+A paper is a straight line of text, but its ideas are connected. A finding may depend on a method, a population, an earlier claim, or a limit that appears many pages later. NodeGraph makes those links visible.
 
-Existing tools weren't quite it. Obsidian-style Markdown notes are great for linking ideas, but **LaTeX doesn't render inside tables**, a real blocker for papers whose comparison tables are full of notation. NodeGraph fuses what those tools do well into a single node: GFM tables, LaTeX (via KaTeX), and inline images all render together, in the same card.
+The current app helps you take one paper apart and verify your notes against the source. The proposed workspace adds the next step: compare that paper with the rest of your collection. It will keep agreements, conflicts, limits, and missing evidence visible instead of blending every paper into one summary.
 
-It's also built around **working with an agent rather than a mouse**. Hand-placing every node as you read is tedious enough to break the flow of thought. Point an agent at the shipped `.agent/NODEGRAPH_SPEC.md` instead, and (based on the question you're currently asking it) it can decide where in the graph a new idea belongs and write the node there itself, so a conversation with an agent turns directly into structure instead of stopping to file each note by hand.
-
-An agent writing your notes raises an obvious concern: hallucination. That's exactly what the **Original tag** exists to guard against. Every claim can carry the exact source-text quote it's grounded in, and clicking it jumps straight into the source PDF and highlights the matching sentence, so you can **verify the agent's claim against the paper in one click** instead of trusting it blindly.
-
-And since you don't always want to be inside VS Code to revisit your own notes, every graph **exports to a single self-contained HTML file**. Open it in any browser, no extension required.
+AI can speed up the work, but the researcher stays in charge. AI-created notes and links will remain suggestions until a researcher reviews them. Important conclusions will keep a clear path back to the PDFs that support them.
 
 ---
 
@@ -77,26 +116,34 @@ And since you don't always want to be inside VS Code to revisit your own notes, 
 
 ## Features
 
+The features below are available today in NodeGraph 0.7.2.
+
 | | |
 |---|---|
-| **Rich node content** | Markdown (GFM) tables, LaTeX via KaTeX, inline images, and collapsible toggle sections — all with the same rich renderer |
-| **Overlap-free hop layout** | Bottom-up/top-down auto-layout keyed to each main-topic's hop tree — expanding a node only grows its own branch, never disturbs siblings |
-| **Smart wire routing** | A*-routed backbone wires that keep clear of node borders and spread apart when several share an endpoint; hop-child wires are direct straight lines anchored to the correct side |
-| **PDF quote-jump** | Right-click an original-text quote to open the source PDF, jump to the page, and highlight the matching sentence |
-| **Ctrl+F search** | BFS-ordered dropdown over titles, content, original text, and toggle sections, with inline match highlighting |
-| **Debug grid** | One-click overlay of hop-level and main-topic-cluster boundaries for visually spotting layout issues |
-| **HTML export** | A self-contained, interactive standalone viewer — search, highlighting, and layout included |
-| **Agent-friendly** | A machine-readable spec (`.agent/NODEGRAPH_SPEC.md`) so AI agents can read and write graphs directly |
+| **Rich node content** | Put Markdown tables, math, images, and folded sections in the same card. |
+| **Automatic layout** | Expand a branch without pushing unrelated branches out of place. |
+| **Clear connections** | Wires route around cards and remain easy to follow as the graph grows. |
+| **PDF quote check** | Right-click a source quote to open the PDF, jump to the page, and highlight the matching text. |
+| **Search** | Search titles, notes, source quotes, and folded sections, with matches marked inside each card. |
+| **Layout guide** | Turn on a grid to find spacing and layout problems. |
+| **HTML export** | Share one interactive file with search, highlighting, and the same graph layout. |
+| **AI-ready format** | Give an AI agent the included guide so it can read and write graph files. |
 
-See **[FEATURES.md](https://github.com/Jeong-jin-Han/NodeGraph/blob/main/docs/FEATURES.md)** for the complete feature list, organized by Editing / Layout & wires / Find & focus / Images / Files & export.
+See [the complete feature list](docs/FEATURES.md) for editing, layout, search, images, files, and export details.
 
 ---
 
 ## Agent / AI Editing
 
-> **Before pointing an AI agent at a project, run `NodeGraph: Copy Agent Spec to Workspace` once** — it writes `.agent/NODEGRAPH_SPEC.md` (copied from the extension bundle), `.agent/ENVIRONMENT.md` (freshly generated), and `.prompt/korean.md` / `.prompt/english.md` (ready-to-paste copies of the example prompt below, one per language) into one folder, so the agent can read all of it like any other file without needing to know the extension's install path. Right-click the target folder in the Explorer and pick it from the context menu (this is the reliable way in a multi-root workspace, or to target one specific subfolder — it writes into exactly the folder you clicked, nowhere else); running it from the Command Palette instead targets the workspace's only folder, or prompts you to pick one if there are several. It's opt-in rather than automatic on purpose: `.agent/NODEGRAPH_SPEC.md` is a large static doc identical across every install, and writing it into a folder automatically (the way `.agent/ENVIRONMENT.md` alone already does, silently, at every activation) would mean it could land in your own repo without you choosing that.
->
-> **AI agents: read these two files before doing anything (both written by the command above, into the same folder):**
+Before asking an AI agent to work on a paper, run `NodeGraph: Copy Agent Spec to Workspace` once. The command adds these files to the folder you choose:
+
+- `.agent/NODEGRAPH_SPEC.md` — the graph format and writing rules.
+- `.agent/ENVIRONMENT.md` — the PDF and image tools available on your computer.
+- `.prompt/english.md` and `.prompt/korean.md` — prompts you can give to an agent.
+
+Right-click a folder in the Explorer to place the files there. If you use the Command Palette, NodeGraph uses the only open workspace folder or asks you to choose one. The agent guide is added only when you run this command.
+
+> **AI agents: read these two files before doing anything:**
 > 1. `.agent/NODEGRAPH_SPEC.md` — full JSON schema, syntax rules, and constraints
 > 2. `.agent/ENVIRONMENT.md` — lists which Python libraries and CLI tools are installed on this machine (PDF reading, image processing, etc.)
 >
@@ -105,16 +152,25 @@ See **[FEATURES.md](https://github.com/Jeong-jin-Han/NodeGraph/blob/main/docs/FE
 > - Prefer `$$...$$` display blocks for formulas — inline `$...$` only for short in-sentence symbols
 > - Literal currency dollars must be escaped: `\$4.28/GB` (in JSON strings: `\\$4.28/GB`) — a bare `$` opens an inline-math region
 > - When writing content in a non-English language, pair each key technical term with its original English form (see `.agent/NODEGRAPH_SPEC.md` for the exact convention)
-> - The Killer Application is not limited to one — capture every genuinely remarkable contribution
+> - A paper may have more than one major contribution; include each one
 > - `toggleItems[].content` renders exactly like `node.content` — Markdown tables, KaTeX, and `[[IMG:filename:WxH]]` tokens all work inside toggles too
 > - Always update the `"modified"` timestamp after every edit
 
-The file `.agent/NODEGRAPH_SPEC.md` (included in the extension) is a machine-readable specification for AI agents. It documents the full JSON schema, ID conventions, KaTeX/Markdown syntax rules, rendering support per field, and a step-by-step workflow for generating a nodegraph from a PDF.
+The included `.agent/NODEGRAPH_SPEC.md` tells an AI agent how to build a valid graph. It covers the JSON format, IDs, math and Markdown rules, and the steps for turning a PDF into a node graph.
 
-Five fully agent-built graphs ship with the extension, so you can open a finished result before building your own: `demo/ex1` ("Attention Is All You Need"), `demo/ex2` ("Point Transformer"), `demo/ex3` ("Mooncake"), `demo/ex4` ("3D Gaussian Splatting"), and `demo/ex5` ("Mental Illness Terms and Hermeneutic Hijacking", a philosophy paper, not just CS/ML) — between them covering KaTeX formulas, Markdown tables, toggle sections, and deep question nodes.
+Five AI-built examples ship with the extension, so you can review a finished graph before making your own:
+
+- `demo/ex1` — "Attention Is All You Need"
+- `demo/ex2` — "Point Transformer"
+- `demo/ex3` — "Mooncake"
+- `demo/ex4` — "3D Gaussian Splatting"
+- `demo/ex5` — "Mental Illness Terms and Hermeneutic Hijacking"
+
+Together, they show math, tables, folded sections, and detailed question nodes. The fifth example is a philosophy paper, which shows that NodeGraph is not limited to computer science or papers with a standard methods section.
 
 **Typical agent workflow:**
-1. Right-click the project folder in the Explorer and run `NodeGraph: Copy Agent Spec to Workspace` (one-time per folder). If you opened that folder itself as the workspace root, VS Code won't show a right-click menu on it directly, right-click the empty space below the file list instead
+
+1. Right-click the project folder and run `NodeGraph: Copy Agent Spec to Workspace`. If the folder is the workspace root, right-click the empty space below the file list.
 2. Tell your agent to read `.agent/NODEGRAPH_SPEC.md` and `.agent/ENVIRONMENT.md`
 3. Read or create the target `.nodegraph.json`
 4. Edit the JSON directly
@@ -124,7 +180,7 @@ Five fully agent-built graphs ship with the extension, so you can open a finishe
 
 <b>English</b> | <a href="https://github.com/Jeong-jin-Han/NodeGraph/blob/main/docs/ko/README.md#example-prompt">한국어</a>
 
-After running `NodeGraph: Copy Agent Spec to Workspace` on the folder that holds your PDF (step 1 above), paste this into your agent — fill in the path and it does the rest: reads the spec, reads the paper, and builds the graph without further back-and-forth. The same command also writes this out as `.prompt/english.md` (and a Korean version at `.prompt/korean.md`) in that folder, so you can open the file directly instead of copying it from here.
+After running `NodeGraph: Copy Agent Spec to Workspace`, fill in the PDF path and give this prompt to your agent. The command also saves this prompt as `.prompt/english.md`, along with a Korean version.
 
 ```
 PDF_ABSOLUTE_PATH = <PDF_ABSOLUTE_PATH>
@@ -244,6 +300,8 @@ Matched text inside each node is additionally marked (inverse template color + u
 
 Install **NodeGraph** from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=JeongjinHan.nodegraph), or search "NodeGraph" in VS Code's Extensions view (`Ctrl+Shift+X`) and click Install. A packaged `.vsix` (`packages/nodegraph-<version>.vsix`) is also available in this repo if you'd rather install that directly.
 
+> The Marketplace release provides the current single-paper experience. The proposed multi-paper workspace is not included in that release yet.
+
 <details>
 <summary><b>Getting started</b></summary>
 
@@ -360,14 +418,16 @@ Images are stored in a `.<graphname>-imgs/` folder next to the JSON file.
 | Math / rendering | KaTeX, custom Markdown-lite renderer, SVG wire routing (A*) |
 | PDF | `pdfjs-dist` (custom minimal renderer, not the prebuilt viewer toolkit) |
 | Build | esbuild |
-| Storage | Plain JSON on disk (`.nodegraph.json`) — no accounts, no external services |
+| Storage today | Plain JSON on disk (`.nodegraph.json`) — no accounts, no external services |
+| Planned project storage | More local JSON files for project records; existing `.nodegraph.json` files stay unchanged |
 
 ---
 
 ## Privacy
 
-NodeGraph does **not** collect, store, or transmit any data to external servers.
+NodeGraph does **not** collect, store, or send any data to external servers. The proposed multi-paper workspace will follow the same local-first approach.
 
-- Everything lives in the `.nodegraph.json` file and local image assets next to it — no accounts, no telemetry, no analytics
+- Today, everything lives in the `.nodegraph.json` file and local image assets next to it — no accounts, no telemetry, no analytics
+- The proposed project layer will store its added records as local JSON files
 - The editor loads KaTeX from the extension's own bundled assets (no CDN, no network)
 - The one exception: opening an **exported HTML file** in a browser loads KaTeX from a CDN, since that file is meant to be viewed outside VS Code — the editor itself never does this
