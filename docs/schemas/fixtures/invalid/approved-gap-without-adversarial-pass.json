@@ -1,0 +1,30 @@
+{
+  "schema": {
+    "name": "nodegraph-gaps",
+    "version": "1.0.0"
+  },
+  "gaps": [
+    {
+      "gapId": "gap_unchecked",
+      "text": "An untested candidate gap.",
+      "gapType": "population",
+      "evidenceRefs": [],
+      "adversarialPasses": [],
+      "reviewState": {
+        "verification": {
+          "source": "verified",
+          "interpretation": "verified",
+          "classification": "verified"
+        },
+        "approval": {
+          "researcher": "approved",
+          "advisor": "not-reviewed"
+        },
+        "origin": "human"
+      },
+      "created": "2026-07-30T12:00:00Z",
+      "modified": "2026-07-30T12:00:00Z"
+    }
+  ],
+  "modified": "2026-07-30T12:00:00Z"
+}

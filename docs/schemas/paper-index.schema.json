@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Jeong-jin-Han/NodeGraph/main/docs/schemas/paper-index.schema.json",
+  "title": "NodeGraph Paper Summary Index",
+  "description": "Disposable, rebuildable paper summary index.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "generatedAt",
+    "entries"
+  ],
+  "properties": {
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "const": "nodegraph-paper-index"
+        },
+        "version": {
+          "$ref": "common.schema.json#/definitions/semanticVersion"
+        }
+      }
+    },
+    "generatedAt": {
+      "$ref": "common.schema.json#/definitions/timestamp"
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "paperId",
+          "paperPath",
+          "paperGraphHash",
+          "taxonomyVersion",
+          "extractorVersion",
+          "indexedAt"
+        ],
+        "properties": {
+          "paperId": {
+            "$ref": "common.schema.json#/definitions/paperId"
+          },
+          "paperPath": {
+            "$ref": "common.schema.json#/definitions/projectRelativePath"
+          },
+          "paperGraphHash": {
+            "$ref": "common.schema.json#/definitions/sha256"
+          },
+          "sourceDocumentHash": {
+            "$ref": "common.schema.json#/definitions/sha256"
+          },
+          "taxonomyVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "extractorVersion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "indexedAt": {
+            "$ref": "common.schema.json#/definitions/timestamp"
+          }
+        }
+      }
+    }
+  }
+}

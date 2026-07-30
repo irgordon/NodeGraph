@@ -1,0 +1,32 @@
+{
+  "evidenceId": "evidence_001",
+  "paperId": "paper_001",
+  "source": {
+    "sourceId": "source_001",
+    "relativePath": "/tmp/outside.pdf",
+    "sourceDocumentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "quote": {
+    "text": "Fixture quotation.",
+    "quoteContentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "locator": {
+    "page": 1,
+    "exact": "Fixture quotation."
+  },
+  "evidenceObjectHash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "reviewState": {
+    "verification": {
+      "source": "pending",
+      "interpretation": "not-applicable",
+      "classification": "not-applicable"
+    },
+    "approval": {
+      "researcher": "not-reviewed",
+      "advisor": "not-reviewed"
+    },
+    "origin": "imported"
+  },
+  "created": "2026-07-30T12:00:00Z",
+  "modified": "2026-07-30T12:00:00Z"
+}

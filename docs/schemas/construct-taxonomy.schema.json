@@ -1,0 +1,114 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Jeong-jin-Han/NodeGraph/main/docs/schemas/construct-taxonomy.schema.json",
+  "title": "NodeGraph Construct Taxonomy",
+  "description": "Project-owned normalized construct registry.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "taxonomyVersion",
+    "constructs",
+    "modified"
+  ],
+  "properties": {
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "const": "nodegraph-construct-taxonomy"
+        },
+        "version": {
+          "$ref": "common.schema.json#/definitions/semanticVersion"
+        }
+      }
+    },
+    "taxonomyVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "constructs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/construct"
+      }
+    },
+    "modified": {
+      "$ref": "common.schema.json#/definitions/timestamp"
+    }
+  },
+  "definitions": {
+    "construct": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "constructId",
+        "canonicalName",
+        "aliases",
+        "status",
+        "reviewState"
+      ],
+      "properties": {
+        "constructId": {
+          "$ref": "common.schema.json#/definitions/constructId"
+        },
+        "canonicalName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "definition": {
+          "type": "string"
+        },
+        "aliases": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "status": {
+          "enum": [
+            "proposed",
+            "approved",
+            "deprecated"
+          ]
+        },
+        "primaryConstructId": {
+          "$ref": "common.schema.json#/definitions/constructId"
+        },
+        "reviewState": {
+          "$ref": "common.schema.json#/definitions/reviewState"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "deprecated"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "primaryConstructId"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "primaryConstructId"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

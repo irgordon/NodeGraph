@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Jeong-jin-Han/NodeGraph/main/docs/schemas/research-questions.schema.json",
+  "title": "NodeGraph Research Questions Document",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "researchQuestions",
+    "modified"
+  ],
+  "properties": {
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "const": "nodegraph-research-questions"
+        },
+        "version": {
+          "$ref": "common.schema.json#/definitions/semanticVersion"
+        }
+      }
+    },
+    "researchQuestions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/researchQuestion"
+      }
+    },
+    "modified": {
+      "$ref": "common.schema.json#/definitions/timestamp"
+    }
+  },
+  "definitions": {
+    "researchQuestion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "researchQuestionId",
+        "text",
+        "gapRefs",
+        "claimRefs",
+        "plannedMethod",
+        "reviewState",
+        "created",
+        "modified"
+      ],
+      "properties": {
+        "researchQuestionId": {
+          "$ref": "common.schema.json#/definitions/researchQuestionId"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gapRefs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "common.schema.json#/definitions/gapId"
+          }
+        },
+        "claimRefs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "common.schema.json#/definitions/claimId"
+          }
+        },
+        "plannedMethod": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewState": {
+          "$ref": "common.schema.json#/definitions/reviewState"
+        },
+        "created": {
+          "$ref": "common.schema.json#/definitions/timestamp"
+        },
+        "modified": {
+          "$ref": "common.schema.json#/definitions/timestamp"
+        }
+      }
+    }
+  }
+}

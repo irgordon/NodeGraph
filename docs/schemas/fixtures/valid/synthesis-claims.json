@@ -1,0 +1,57 @@
+{
+  "schema": {
+    "name": "nodegraph-synthesis-claims",
+    "version": "1.0.0"
+  },
+  "claims": [
+    {
+      "claimId": "claim_001",
+      "text": "Shared leadership is associated with trust across both studies.",
+      "claimType": "synthesis",
+      "findingRefs": [
+        {
+          "paperId": "paper_001",
+          "findingId": "finding_001",
+          "relationship": "supports"
+        },
+        {
+          "paperId": "paper_002",
+          "findingId": "finding_002",
+          "relationship": "partially-supports"
+        }
+      ],
+      "evidenceRefs": [
+        "evidence_001",
+        "evidence_002"
+      ],
+      "constructRefs": [
+        "construct_shared_leadership"
+      ],
+      "paradigmDecision": {
+        "required": false,
+        "status": "not-required"
+      },
+      "confidence": {
+        "label": "moderate",
+        "reasons": [
+          "Both fixture papers provide supporting findings."
+        ]
+      },
+      "reviewState": {
+        "verification": {
+          "source": "verified",
+          "interpretation": "verified",
+          "classification": "verified"
+        },
+        "approval": {
+          "researcher": "approved",
+          "advisor": "not-reviewed"
+        },
+        "origin": "human"
+      },
+      "created": "2026-07-30T12:00:00Z",
+      "modified": "2026-07-30T12:00:00Z"
+    }
+  ],
+  "modified": "2026-07-30T12:00:00Z"
+}

@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Jeong-jin-Han/NodeGraph/main/docs/schemas/evidence-index.schema.json",
+  "title": "NodeGraph Evidence Index",
+  "description": "Disposable, rebuildable evidence lookup index.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "generatedAt",
+    "entries"
+  ],
+  "properties": {
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "const": "nodegraph-evidence-index"
+        },
+        "version": {
+          "$ref": "common.schema.json#/definitions/semanticVersion"
+        }
+      }
+    },
+    "generatedAt": {
+      "$ref": "common.schema.json#/definitions/timestamp"
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "evidenceId",
+          "paperId",
+          "evidenceObjectHash",
+          "quoteContentHash",
+          "sourceDocumentHash",
+          "indexedAt"
+        ],
+        "properties": {
+          "evidenceId": {
+            "$ref": "common.schema.json#/definitions/evidenceId"
+          },
+          "paperId": {
+            "$ref": "common.schema.json#/definitions/paperId"
+          },
+          "nodeId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidenceObjectHash": {
+            "$ref": "common.schema.json#/definitions/sha256"
+          },
+          "quoteContentHash": {
+            "$ref": "common.schema.json#/definitions/sha256"
+          },
+          "sourceDocumentHash": {
+            "$ref": "common.schema.json#/definitions/sha256"
+          },
+          "indexedAt": {
+            "$ref": "common.schema.json#/definitions/timestamp"
+          }
+        }
+      }
+    }
+  }
+}

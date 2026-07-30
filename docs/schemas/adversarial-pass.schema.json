@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Jeong-jin-Han/NodeGraph/main/docs/schemas/adversarial-pass.schema.json",
+  "title": "NodeGraph Adversarial Pass",
+  "description": "Recorded attempt to disprove a candidate gap against a specific corpus revision.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "adversarialPassId",
+    "gapId",
+    "corpusRevision",
+    "taxonomyVersion",
+    "executedBy",
+    "promptVersion",
+    "executedAt",
+    "candidateCoverage",
+    "result"
+  ],
+  "properties": {
+    "adversarialPassId": {
+      "$ref": "common.schema.json#/definitions/adversarialPassId"
+    },
+    "gapId": {
+      "$ref": "common.schema.json#/definitions/gapId"
+    },
+    "corpusRevision": {
+      "$ref": "common.schema.json#/definitions/sha256"
+    },
+    "taxonomyVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "executedBy": {
+      "$ref": "common.schema.json#/definitions/actor"
+    },
+    "promptVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "executedAt": {
+      "$ref": "common.schema.json#/definitions/timestamp"
+    },
+    "candidateCoverage": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/definitions/findingPointer"
+      }
+    },
+    "result": {
+      "enum": [
+        "coverage-identified",
+        "no-coverage-identified",
+        "inconclusive"
+      ]
+    }
+  }
+}

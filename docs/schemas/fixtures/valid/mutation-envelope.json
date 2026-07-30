@@ -1,0 +1,19 @@
+{
+  "mutationId": "mutation_001",
+  "targetDocument": "synthesis/claims.json",
+  "baseRevision": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "operations": [
+    {
+      "op": "add",
+      "path": "/claims/-",
+      "value": {
+        "claimId": "claim_002"
+      }
+    }
+  ],
+  "requestedAt": "2026-07-30T12:00:00Z",
+  "actor": {
+    "type": "human",
+    "id": "researcher"
+  }
+}

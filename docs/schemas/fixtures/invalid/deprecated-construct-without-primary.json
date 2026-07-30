@@ -1,0 +1,28 @@
+{
+  "schema": {
+    "name": "nodegraph-construct-taxonomy",
+    "version": "1.0.0"
+  },
+  "taxonomyVersion": 1,
+  "constructs": [
+    {
+      "constructId": "construct_deprecated",
+      "canonicalName": "deprecated construct",
+      "aliases": [],
+      "status": "deprecated",
+      "reviewState": {
+        "verification": {
+          "source": "not-applicable",
+          "interpretation": "verified",
+          "classification": "verified"
+        },
+        "approval": {
+          "researcher": "approved",
+          "advisor": "not-reviewed"
+        },
+        "origin": "human"
+      }
+    }
+  ],
+  "modified": "2026-07-30T12:00:00Z"
+}

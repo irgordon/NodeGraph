@@ -1,0 +1,48 @@
+{
+  "evidenceA": {
+    "evidenceId": "evidence_hash_fixture",
+    "paperId": "paper_001",
+    "nodeId": "node_old",
+    "source": {
+      "sourceId": "source_001",
+      "relativePath": "pdfs/original-location.pdf",
+      "sourceDocumentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "title": "Original descriptive title"
+    },
+    "quote": {
+      "text": " Shared  leadership\r\nimproves trust. "
+    },
+    "locator": {
+      "page": 14,
+      "prefix": " Earlier sentence. ",
+      "exact": "Shared  leadership improves trust.",
+      "suffix": "Following sentence."
+    },
+    "evidenceObjectHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "modified": "2026-07-30T12:00:00Z"
+  },
+  "evidenceB": {
+    "evidenceId": "evidence_hash_fixture",
+    "paperId": "paper_001",
+    "nodeId": "node_renamed",
+    "source": {
+      "sourceId": "source_001",
+      "relativePath": "archive/relocated.pdf",
+      "sourceDocumentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "title": "Updated descriptive title"
+    },
+    "quote": {
+      "text": "Shared leadership improves trust."
+    },
+    "locator": {
+      "page": 14,
+      "prefix": "Earlier sentence.",
+      "exact": "Shared leadership improves trust.",
+      "suffix": "Following sentence."
+    },
+    "evidenceObjectHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "modified": "2027-01-01T00:00:00Z"
+  },
+  "expectedQuoteContentHash": "sha256:74cdd6bfd8dc1df543f8fc145b85a0b7e5f9a9d052bef24cdc9bd89ea4d2c889",
+  "expectedEvidenceObjectHash": "sha256:66545f2fa6c569a881cd6e338e39ed7a783f4cb061933b87b0f62b9e2bc15088"
+}

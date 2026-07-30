@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Jeong-jin-Han/NodeGraph/main/docs/schemas/gaps.schema.json",
+  "title": "NodeGraph Candidate Gaps Document",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "gaps",
+    "modified"
+  ],
+  "properties": {
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "const": "nodegraph-gaps"
+        },
+        "version": {
+          "$ref": "common.schema.json#/definitions/semanticVersion"
+        }
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/gap"
+      }
+    },
+    "modified": {
+      "$ref": "common.schema.json#/definitions/timestamp"
+    }
+  },
+  "definitions": {
+    "gap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gapId",
+        "text",
+        "gapType",
+        "evidenceRefs",
+        "adversarialPasses",
+        "reviewState",
+        "created",
+        "modified"
+      ],
+      "properties": {
+        "gapId": {
+          "$ref": "common.schema.json#/definitions/gapId"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gapType": {
+          "enum": [
+            "population",
+            "methodological",
+            "theoretical",
+            "contextual",
+            "outcome",
+            "temporal"
+          ]
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "common.schema.json#/definitions/evidenceId"
+          }
+        },
+        "adversarialPasses": {
+          "type": "array",
+          "items": {
+            "$ref": "adversarial-pass.schema.json"
+          }
+        },
+        "reviewState": {
+          "$ref": "common.schema.json#/definitions/reviewState"
+        },
+        "created": {
+          "$ref": "common.schema.json#/definitions/timestamp"
+        },
+        "modified": {
+          "$ref": "common.schema.json#/definitions/timestamp"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "reviewState": {
+                "properties": {
+                  "approval": {
+                    "properties": {
+                      "researcher": {
+                        "const": "approved"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "adversarialPasses": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

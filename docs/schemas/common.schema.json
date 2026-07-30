@@ -1,0 +1,236 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Jeong-jin-Han/NodeGraph/main/docs/schemas/common.schema.json",
+  "title": "NodeGraph Synthesis Contract Primitives",
+  "definitions": {
+    "semanticVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "revisionToken": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/sha256"
+        },
+        {
+          "const": "absent"
+        }
+      ]
+    },
+    "projectRelativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:[\\\\/])(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*\\\\)(?!.*//)[^\\u0000]+$"
+    },
+    "projectId": {
+      "type": "string",
+      "pattern": "^project_[A-Za-z0-9_-]+$"
+    },
+    "paperId": {
+      "type": "string",
+      "pattern": "^paper_[A-Za-z0-9_-]+$"
+    },
+    "sourceId": {
+      "type": "string",
+      "pattern": "^source_[A-Za-z0-9_-]+$"
+    },
+    "evidenceId": {
+      "type": "string",
+      "pattern": "^evidence_[A-Za-z0-9_-]+$"
+    },
+    "claimId": {
+      "type": "string",
+      "pattern": "^claim_[A-Za-z0-9_-]+$"
+    },
+    "conflictId": {
+      "type": "string",
+      "pattern": "^conflict_[A-Za-z0-9_-]+$"
+    },
+    "gapId": {
+      "type": "string",
+      "pattern": "^gap_[A-Za-z0-9_-]+$"
+    },
+    "researchQuestionId": {
+      "type": "string",
+      "pattern": "^rq_[A-Za-z0-9_-]+$"
+    },
+    "constructId": {
+      "type": "string",
+      "pattern": "^construct_[A-Za-z0-9_-]+$"
+    },
+    "adversarialPassId": {
+      "type": "string",
+      "pattern": "^adversarial_[A-Za-z0-9_-]+$"
+    },
+    "mutationId": {
+      "type": "string",
+      "pattern": "^mutation_[A-Za-z0-9_-]+$"
+    },
+    "eventId": {
+      "type": "string",
+      "pattern": "^evt_[A-Za-z0-9_-]+$"
+    },
+    "relationship": {
+      "enum": [
+        "supports",
+        "partially-supports",
+        "contradicts",
+        "extends",
+        "qualifies",
+        "replicates",
+        "fails-to-replicate",
+        "uses-different-definition",
+        "uses-different-population",
+        "uses-different-method"
+      ]
+    },
+    "findingPointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "paperId",
+        "findingId"
+      ],
+      "properties": {
+        "paperId": {
+          "$ref": "#/definitions/paperId"
+        },
+        "findingId": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "relatedFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "paperId",
+        "findingId",
+        "relationship"
+      ],
+      "properties": {
+        "paperId": {
+          "$ref": "#/definitions/paperId"
+        },
+        "findingId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relationship": {
+          "$ref": "#/definitions/relationship"
+        }
+      }
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "id"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "human",
+            "agent",
+            "service"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "reviewState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "verification",
+        "approval",
+        "origin"
+      ],
+      "properties": {
+        "verification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source",
+            "interpretation",
+            "classification"
+          ],
+          "properties": {
+            "source": {
+              "enum": [
+                "pending",
+                "verified",
+                "rejected",
+                "stale",
+                "not-applicable"
+              ]
+            },
+            "interpretation": {
+              "enum": [
+                "pending",
+                "verified",
+                "rejected",
+                "not-applicable"
+              ]
+            },
+            "classification": {
+              "enum": [
+                "pending",
+                "verified",
+                "disputed",
+                "not-applicable"
+              ]
+            }
+          }
+        },
+        "approval": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "researcher",
+            "advisor"
+          ],
+          "properties": {
+            "researcher": {
+              "enum": [
+                "not-reviewed",
+                "approved",
+                "rejected"
+              ]
+            },
+            "advisor": {
+              "enum": [
+                "not-reviewed",
+                "approved",
+                "changes-requested"
+              ]
+            }
+          }
+        },
+        "origin": {
+          "enum": [
+            "human",
+            "ai",
+            "imported"
+          ]
+        }
+      }
+    }
+  }
+}

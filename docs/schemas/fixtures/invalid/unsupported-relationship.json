@@ -1,0 +1,33 @@
+{
+  "claimId": "claim_invalid_relationship",
+  "text": "Fixture claim.",
+  "claimType": "single-study-proposition",
+  "findingRefs": [
+    {
+      "paperId": "paper_001",
+      "findingId": "finding_001",
+      "relationship": "agrees"
+    }
+  ],
+  "evidenceRefs": [
+    "evidence_001"
+  ],
+  "paradigmDecision": {
+    "required": false,
+    "status": "not-required"
+  },
+  "reviewState": {
+    "verification": {
+      "source": "pending",
+      "interpretation": "pending",
+      "classification": "pending"
+    },
+    "approval": {
+      "researcher": "not-reviewed",
+      "advisor": "not-reviewed"
+    },
+    "origin": "ai"
+  },
+  "created": "2026-07-30T12:00:00Z",
+  "modified": "2026-07-30T12:00:00Z"
+}

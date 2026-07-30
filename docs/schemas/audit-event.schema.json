@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Jeong-jin-Han/NodeGraph/main/docs/schemas/audit-event.schema.json",
+  "title": "NodeGraph Audit Event",
+  "description": "One append-only JSON Lines event recording an analytical or system decision.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "eventId",
+    "timestamp",
+    "actor",
+    "action",
+    "objectId"
+  ],
+  "properties": {
+    "eventId": {
+      "$ref": "common.schema.json#/definitions/eventId"
+    },
+    "timestamp": {
+      "$ref": "common.schema.json#/definitions/timestamp"
+    },
+    "actor": {
+      "$ref": "common.schema.json#/definitions/actor"
+    },
+    "action": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9-]*)+$"
+    },
+    "objectId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "beforeHash": {
+      "$ref": "common.schema.json#/definitions/sha256"
+    },
+    "afterHash": {
+      "$ref": "common.schema.json#/definitions/sha256"
+    },
+    "baseRevision": {
+      "$ref": "common.schema.json#/definitions/revisionToken"
+    },
+    "resultingRevision": {
+      "$ref": "common.schema.json#/definitions/sha256"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "supersedesEventId": {
+      "$ref": "common.schema.json#/definitions/eventId"
+    }
+  }
+}

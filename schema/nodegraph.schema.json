@@ -36,7 +36,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "template", "title", "content", "contentExpanded", "originalExpanded", "childrenExpanded", "position", "children", "images", "links"],
+        "required": ["id", "template", "title", "content", "contentExpanded", "originalExpanded", "childrenExpanded", "position", "children", "links"],
         "properties": {
           "id": { "type": "string" },
           "template": { "type": "string" },

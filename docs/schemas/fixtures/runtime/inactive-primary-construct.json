@@ -1,0 +1,17 @@
+{
+  "taxonomy": {
+    "constructs": [
+      {
+        "constructId": "construct_deprecated",
+        "status": "deprecated",
+        "primaryConstructId": "construct_proposed"
+      },
+      {
+        "constructId": "construct_proposed",
+        "status": "proposed"
+      }
+    ]
+  },
+  "constructId": "construct_deprecated",
+  "expectedCode": "primary-construct-not-active"
+}

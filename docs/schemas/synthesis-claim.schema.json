@@ -1,0 +1,135 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Jeong-jin-Han/NodeGraph/main/docs/schemas/synthesis-claim.schema.json",
+  "title": "NodeGraph Synthesis Claim",
+  "description": "Cross-paper claim linked to paper-level findings and source evidence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "claimId",
+    "text",
+    "claimType",
+    "findingRefs",
+    "evidenceRefs",
+    "paradigmDecision",
+    "reviewState",
+    "created",
+    "modified"
+  ],
+  "properties": {
+    "claimId": {
+      "$ref": "common.schema.json#/definitions/claimId"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "claimType": {
+      "enum": [
+        "synthesis",
+        "single-study-proposition",
+        "boundary-condition",
+        "mechanism"
+      ]
+    },
+    "findingRefs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/definitions/relatedFinding"
+      }
+    },
+    "evidenceRefs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/definitions/evidenceId"
+      }
+    },
+    "constructRefs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/definitions/constructId"
+      }
+    },
+    "paradigmDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "status"
+      ],
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "not-required",
+            "pending",
+            "approved",
+            "rejected"
+          ]
+        },
+        "rationale": {
+          "type": "string"
+        }
+      }
+    },
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "reasons"
+      ],
+      "properties": {
+        "label": {
+          "enum": [
+            "low",
+            "moderate",
+            "high",
+            "not-assessed"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "reviewState": {
+      "$ref": "common.schema.json#/definitions/reviewState"
+    },
+    "created": {
+      "$ref": "common.schema.json#/definitions/timestamp"
+    },
+    "modified": {
+      "$ref": "common.schema.json#/definitions/timestamp"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "claimType": {
+            "const": "synthesis"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "findingRefs": {
+            "minItems": 2
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "schema": {
+    "name": "nodegraph-project",
+    "version": "1.0.0"
+  },
+  "projectId": "project_traversal",
+  "title": "Traversal Fixture",
+  "created": "2026-07-30T12:00:00Z",
+  "modified": "2026-07-30T12:00:00Z",
+  "papers": [
+    {
+      "paperId": "paper_001",
+      "path": "../outside.nodegraph.json"
+    }
+  ],
+  "documents": {
+    "claims": "synthesis/claims.json",
+    "conflicts": "synthesis/conflicts.json",
+    "gaps": "synthesis/gaps.json",
+    "researchQuestions": "synthesis/research-questions.json",
+    "constructs": "taxonomy/constructs.json",
+    "paperIndex": "indexes/papers.index.json",
+    "evidenceIndex": "indexes/evidence.index.json",
+    "auditLog": "audit/events.jsonl"
+  }
+}

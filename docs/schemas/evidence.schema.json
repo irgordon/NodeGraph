@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Jeong-jin-Han/NodeGraph/main/docs/schemas/evidence.schema.json",
+  "title": "NodeGraph Evidence",
+  "description": "Source-bound evidence used by paper-level findings and synthesis claims.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "evidenceId",
+    "paperId",
+    "source",
+    "quote",
+    "locator",
+    "evidenceObjectHash",
+    "reviewState",
+    "created",
+    "modified"
+  ],
+  "properties": {
+    "evidenceId": {
+      "$ref": "common.schema.json#/definitions/evidenceId"
+    },
+    "paperId": {
+      "$ref": "common.schema.json#/definitions/paperId"
+    },
+    "nodeId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceId",
+        "relativePath",
+        "sourceDocumentHash"
+      ],
+      "properties": {
+        "sourceId": {
+          "$ref": "common.schema.json#/definitions/sourceId"
+        },
+        "relativePath": {
+          "$ref": "common.schema.json#/definitions/projectRelativePath"
+        },
+        "sourceDocumentHash": {
+          "$ref": "common.schema.json#/definitions/sha256"
+        },
+        "doi": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "quote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "text",
+        "quoteContentHash"
+      ],
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "quoteContentHash": {
+          "$ref": "common.schema.json#/definitions/sha256"
+        }
+      }
+    },
+    "locator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "page",
+        "exact"
+      ],
+      "properties": {
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "prefix": {
+          "type": "string"
+        },
+        "exact": {
+          "type": "string",
+          "minLength": 1
+        },
+        "suffix": {
+          "type": "string"
+        },
+        "section": {
+          "type": "string"
+        }
+      }
+    },
+    "evidenceObjectHash": {
+      "$ref": "common.schema.json#/definitions/sha256"
+    },
+    "reviewState": {
+      "$ref": "common.schema.json#/definitions/reviewState"
+    },
+    "created": {
+      "$ref": "common.schema.json#/definitions/timestamp"
+    },
+    "modified": {
+      "$ref": "common.schema.json#/definitions/timestamp"
+    }
+  }
+}

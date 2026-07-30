@@ -1,0 +1,321 @@
+# NodeGraph — Synthesis Domain Model
+
+**Status:** v0.5 (Task 0 contract baseline)
+**Related documents:** `ARCHITECTURE.md` · `SYNTHESIS_WORKFLOWS.md` · `ROADMAP.md`
+
+This document owns the research concepts the synthesis layer models: evidence levels, constructs, findings, synthesis claims, conflict objects, mechanisms, context, boundary conditions, candidate gaps, research-question alignment, evidence appraisal, and methodological paradigms. It assumes the component boundaries, persistence model, and invariants defined in `ARCHITECTURE.md`.
+
+---
+
+## 1. Evidence Levels
+
+Three levels, each linking to the one below via the provenance anchoring defined in `ARCHITECTURE.md` §8:
+
+1. **Source evidence** — exact quotation from the paper.
+2. **Paper-level interpretation** — a bounded statement about that one paper.
+3. **Cross-paper synthesis** — a statement derived from multiple papers.
+
+```
+Synthesis claim
+   |
+   v
+Paper-level findings
+   |
+   v
+Exact quotations
+   |
+   v
+Original PDFs
+```
+
+Levels 1–2 build on existing NodeGraph 0.7.2 capabilities — paper-level nodes, source quotations, and PDF quote-jump verification — formalized into explicit evidence and interpretation objects. Level 3 remains proposed.
+
+## 2. Standardized Extraction Schema
+
+Every paper in a literature-review project exposes a common field set, so that cross-paper comparison is possible at all:
+
+- Research problem
+- Purpose
+- Research questions / hypotheses
+- Theoretical framework
+- Key constructs
+- Population
+- Setting
+- Sample size
+- Methodology
+- Data collection
+- Analysis method
+- Findings
+- Mechanisms
+- Moderators
+- Limitations
+- Boundary conditions
+- Recommendations
+- Exact evidence quotations
+
+**Rule:** original source language is preserved; normalization is additive, never a silent overwrite.
+
+```json
+{
+  "sourceTerm": "distributed team leadership",
+  "normalizedConstruct": "shared leadership",
+  "confidence": 0.74,
+  "mappingStatus": "pending"
+}
+```
+
+## 3. Methodological Paradigm & Analytical Technique
+
+A quantitative paper reporting a structural-equation-model effect size and a qualitative phenomenological paper reporting thematic findings cannot be synthesized on the same baseline even when both address the same construct. Without explicit paradigm tagging, the matrix would silently equate incommensurable evidence types.
+
+```json
+{
+  "methodologicalParadigm": {
+    "id": "interpretive",
+    "label": "Interpretive",
+    "registryVersion": 1
+  },
+  "researchApproach": "qualitative",
+  "analyticalTechnique": "thematic-analysis",
+  "sampleCharacteristics": {
+    "n": 142,
+    "unitOfAnalysis": "individual"
+  }
+}
+```
+
+The built-in paradigm registry may begin with `positivist`, `interpretive`, `critical`, and `pragmatist`, but those values are not universal or exhaustive. Project-approved additions use the same registry mechanism rather than bypassing normalization.
+
+Paradigm/approach is a visible dimension in the synthesis matrix and claim ledger, not just a filter. Cross-paradigm synthesis claims are flagged for researcher review rather than merged automatically (Core Invariant 12, `ARCHITECTURE.md` §4).
+
+## 4. Construct Registry (Taxonomy)
+
+If normalization is performed independently across 100–300 papers, prompt-level variance will split identical constructs into near-duplicate synonyms (e.g. "shared leadership" vs. "participative leadership" vs. "distributed leadership" treated as distinct).
+
+The project's `constructTaxonomy` is the single source of truth for normalized construct names, owned at the architecture level by `TaxonomyService` (`ARCHITECTURE.md` §6). An agent may only:
+- propose a mapping of a source term to an **existing** taxonomy entry, or
+- propose a **new** taxonomy entry, which requires explicit researcher approval before it becomes usable anywhere else in synthesis.
+
+Unapproved proposed constructs sit in a pending-merge queue; they are never silently instantiated.
+
+**Non-destructive merges.** When Construct B is merged into Construct A, B may already be referenced by pending synthesis claims or by historical audit records. Merging never rewrites those references in place. Textual synonyms belong in A's `aliases`; identifier resolution is carried by retaining B as `deprecated` with `primaryConstructId` set to A:
+
+```json
+[
+  {
+    "constructId": "construct_shared_leadership",
+    "canonicalName": "shared leadership",
+    "aliases": ["distributed leadership", "participative leadership"],
+    "status": "approved"
+  },
+  {
+    "constructId": "construct_participative_leadership",
+    "canonicalName": "participative leadership",
+    "aliases": [],
+    "status": "deprecated",
+    "primaryConstructId": "construct_shared_leadership"
+  }
+]
+```
+
+Objects that referenced Construct B remain valid and resolve B → A through `primaryConstructId`; they are not rewritten to A. `ConstructResolver` rejects missing targets, self-references, deprecated-to-deprecated chains, and primaries that are not `approved`.
+
+## 5. Synthesis Matrix
+
+The primary comparison interface. Not another large graph.
+
+| Paper | Shared leadership | Trust | Accountability | Military context | Mixed workforce |
+|---|---|---|---|---|---|
+| Smith 2024 | Supports | Supports | Not examined | Yes | No |
+| Jones 2025 | Mixed | Supports | Concern raised | No | Yes |
+| Lee 2023 | Supports | Not examined | Supports | Yes | Yes |
+
+Clicking a cell opens: the paper-level finding, supporting quotations, method and population, confidence/verification status, analyst notes.
+
+**Modes:** constructs × papers · findings × populations · methods × outcomes · theories × contexts · research questions × supporting evidence · themes × publication year.
+
+**Sync requirement:** selecting a matrix cell focuses the corresponding evidence nodes in the graph view, and vice versa. The matrix renders from the lazy-loaded summary index defined in `ARCHITECTURE.md` §9, not from fully hydrated paper graphs.
+
+## 6. Agreement and Conflict Objects
+
+**Relationship types:**
+`supports` · `partially-supports` · `contradicts` · `extends` · `qualifies` · `replicates` · `fails-to-replicate` · `uses-different-definition` · `uses-different-population` · `uses-different-method`
+
+These ten kebab-case values are the complete persisted vocabulary. UI labels may replace hyphens with spaces, but repositories never persist alternate spellings.
+
+```json
+{
+  "conflictId": "conflict_014",
+  "claimId": "claim_shared_leadership",
+  "conflictType": "contextual-divergence",
+  "findingRefs": [
+    {
+      "paperId": "paper_001",
+      "findingId": "finding_004",
+      "relationship": "supports"
+    },
+    {
+      "paperId": "paper_007",
+      "findingId": "finding_019",
+      "relationship": "qualifies"
+    }
+  ],
+  "possibleExplanations": [
+    { "type": "context", "value": "centralized military command structure" },
+    { "type": "measurement", "value": "self-reported performance" }
+  ]
+}
+```
+
+`conflictType` distinguishes `direct-empirical-inconsistency` (opposite-signed effects under materially identical conditions) from `contextual-divergence` (e.g. peacetime vs. active-combat samples), `methodological-artifact` (different instruments/analytic techniques), or `conceptual-disagreement` (different definitions of the same construct name). These require different researcher responses and are never collapsed into one undifferentiated `contradicts` bucket.
+
+**Rule:** disagreement is never flattened into a vote count. Five studies agreeing and one disagreeing does not mean the five are correct — the dissenting study may have the stronger design or more relevant population.
+
+## 7. Context and Boundary-Condition Model
+
+Every finding links to structured context fields, answering *"under what conditions does this finding hold?"*:
+
+Country · Sector · Organization type · Military or civilian · Operational tempo · Team size · Hierarchy level · Workforce composition · Remote or colocated · Task complexity · Study year · Technology environment · Crisis or routine operations
+
+Context is surfaced as a possible explanation for divergent findings and feeds directly into `conflictType` classification (§6). It is never asserted as causal.
+
+## 8. Mechanism Mapping
+
+Node types for causal/explanatory chains:
+`mediator` · `moderator` · `antecedent` · `outcome` · `boundary condition` · `proposed mechanism` · `empirically tested mechanism`
+
+```
+Transformational leadership
+        |
+        v
+Psychological safety
+        |
+        v
+Knowledge sharing
+        |
+        v
+Incident-response coordination
+```
+
+**Rule:** proposed mechanisms (conceptual/discussion-paper claims) and empirically tested mechanisms never receive equal evidentiary weight or equivalent visual treatment.
+
+## 9. Population and Evidence-Gap Model
+
+| Population | # Studies | Evidence quality | Coverage |
+|---|---|---|---|
+| Private-sector software teams | 28 | Moderate | Strong |
+| Civilian government cyber teams | 7 | Mixed | Limited |
+| Active-duty military cyber teams | 2 | Low | Sparse |
+| Mixed military-civilian-contractor teams | 0 | None | Absent |
+
+Also surfaces: populations never studied, countries overrepresented, methods overused, theories repeatedly assumed but untested, outcomes measured only via self-report, missing longitudinal research, missing operational environments.
+
+Population coverage distinguishes absence from missing or ambiguous reporting:
+
+```json
+{
+  "populationCoverage": {
+    "status": "present",
+    "value": "active-duty military cyber personnel"
+  }
+}
+```
+
+Allowed statuses are `present`, `absent`, `not-reported`, `unclear`, and `not-applicable`. A missing extraction value must not be converted automatically into an absent population.
+
+**Rule:** these are **candidate gaps**, never **confirmed gaps**. A candidate gap is not usable in Chapter 1/2 until it has an adversarial-pass record (`SYNTHESIS_WORKFLOWS.md` §7).
+
+## 10. Evidence-Quality Weighting
+
+Each paper carries structured appraisal fields: peer-reviewed status, study design, sample size, sampling method, measurement validity, reliability, longitudinal/cross-sectional, self-report dependence, replication status, methodological limitations, relevance to target population — plus the paradigm/technique fields in §3.
+
+```
+Supporting studies: 8
+High-relevance studies: 3
+High-quality studies: 2
+Contradicting studies: 2
+Confidence: Moderate
+```
+
+**Rule:** confidence labels are rule-based and explainable, never an unexplained model score.
+
+```
+Moderate confidence because:
+- six studies report similar findings;
+- only two directly examine military teams;
+- five rely on cross-sectional self-report data;
+- no longitudinal studies were identified.
+```
+
+## 11. Gap-to-Question Model
+
+```
+Observed problem
+   |
+   v
+Established knowledge
+   |
+   v
+Conflicting or incomplete evidence
+   |
+   v
+Population/context gap
+   |
+   v
+Research question
+   |
+   v
+Planned method
+```
+
+Example instantiation:
+- **Established:** Shared leadership is associated with trust in civilian technical teams.
+- **Boundary:** Results are mixed in highly hierarchical settings.
+- **Population gap:** Mixed military-civilian-contractor cybersecurity teams are rarely studied.
+- **Unresolved issue:** It is unclear how formal authority and distributed expertise jointly shape trust.
+- **Research question:** How do members of mixed military cybersecurity teams describe the relationship between formal authority, distributed expertise, and trust?
+
+A committee member can click any research question and see the full evidence chain that justified it, including the adversarial-pass result supporting the underlying gap (`SYNTHESIS_WORKFLOWS.md` §7).
+
+## 12. Review State Dimensions
+
+An object's review status is not one enum — it can be simultaneously source-verified and classification-disputed:
+
+```json
+{
+  "verification": {
+    "source": "verified",
+    "interpretation": "pending",
+    "classification": "disputed"
+  },
+  "approval": {
+    "researcher": "approved",
+    "advisor": "not-reviewed"
+  },
+  "origin": "ai"
+}
+```
+
+Dashboard summary example:
+```
+412 extracted quotations
+287 source-verified
+164 interpreted findings
+91 interpretation-verified
+23 synthesis claims
+8 researcher-approved
+```
+
+**Rule:** the UI never visually equates an agent-generated classification with a researcher-approved conclusion.
+
+## 13. Claim Ledger
+
+The backbone artifact for Chapter 2 drafting. One row per synthesis claim:
+
+| Synthesis claim | Support | Conflict | Context | Quality | Status |
+|---|---|---|---|---|---|
+| Shared leadership increases trust | 7 papers | 2 papers | Mostly civilian | Moderate | Reviewed |
+| Trust improves knowledge sharing | 9 papers | 1 paper | Broadly consistent | Strong | Reviewed |
+| Formal hierarchy suppresses expertise | 3 papers | 3 papers | Context dependent | Low | Open |
+
+Each thematic paragraph in the dissertation traces to one or more ledger claims.

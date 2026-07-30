@@ -1,0 +1,27 @@
+{
+  "schema": {
+    "name": "nodegraph-paper-index",
+    "version": "1.0.0"
+  },
+  "generatedAt": "2026-07-30T12:00:00Z",
+  "entries": [
+    {
+      "paperId": "paper_001",
+      "paperPath": "papers/paper-001.nodegraph.json",
+      "paperGraphHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "sourceDocumentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "taxonomyVersion": 1,
+      "extractorVersion": "1.0.0",
+      "indexedAt": "2026-07-30T12:00:00Z"
+    },
+    {
+      "paperId": "paper_002",
+      "paperPath": "papers/paper-002.nodegraph.json",
+      "paperGraphHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "sourceDocumentHash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "taxonomyVersion": 1,
+      "extractorVersion": "1.0.0",
+      "indexedAt": "2026-07-30T12:00:00Z"
+    }
+  ]
+}

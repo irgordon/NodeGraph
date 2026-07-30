@@ -2,4 +2,5 @@ tmp/
 test/
 test-demo/
 node_modules/
+.DS_Store
 # test-demo-v2 is intentionally tracked — serves as a reference example for AI agents

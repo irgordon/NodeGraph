@@ -1,0 +1,48 @@
+{
+  "schema": {
+    "name": "nodegraph-gaps",
+    "version": "1.0.0"
+  },
+  "gaps": [
+    {
+      "gapId": "gap_001",
+      "text": "Mixed military-civilian cybersecurity teams remain sparsely studied.",
+      "gapType": "population",
+      "evidenceRefs": [
+        "evidence_001"
+      ],
+      "adversarialPasses": [
+        {
+          "adversarialPassId": "adversarial_001",
+          "gapId": "gap_001",
+          "corpusRevision": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "taxonomyVersion": 1,
+          "executedBy": {
+            "type": "agent",
+            "id": "contract-fixture-agent",
+            "version": "1.0.0"
+          },
+          "promptVersion": "gap-redteam-1.0",
+          "executedAt": "2026-07-30T12:00:00Z",
+          "candidateCoverage": [],
+          "result": "no-coverage-identified"
+        }
+      ],
+      "reviewState": {
+        "verification": {
+          "source": "verified",
+          "interpretation": "verified",
+          "classification": "verified"
+        },
+        "approval": {
+          "researcher": "approved",
+          "advisor": "not-reviewed"
+        },
+        "origin": "human"
+      },
+      "created": "2026-07-30T12:00:00Z",
+      "modified": "2026-07-30T12:00:00Z"
+    }
+  ],
+  "modified": "2026-07-30T12:00:00Z"
+}

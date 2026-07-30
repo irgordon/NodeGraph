@@ -1,0 +1,115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Jeong-jin-Han/NodeGraph/main/docs/schemas/conflicts.schema.json",
+  "title": "NodeGraph Conflicts Document",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "conflicts",
+    "modified"
+  ],
+  "properties": {
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "const": "nodegraph-conflicts"
+        },
+        "version": {
+          "$ref": "common.schema.json#/definitions/semanticVersion"
+        }
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/conflict"
+      }
+    },
+    "modified": {
+      "$ref": "common.schema.json#/definitions/timestamp"
+    }
+  },
+  "definitions": {
+    "conflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conflictId",
+        "claimId",
+        "conflictType",
+        "findingRefs",
+        "possibleExplanations",
+        "reviewState",
+        "created",
+        "modified"
+      ],
+      "properties": {
+        "conflictId": {
+          "$ref": "common.schema.json#/definitions/conflictId"
+        },
+        "claimId": {
+          "$ref": "common.schema.json#/definitions/claimId"
+        },
+        "conflictType": {
+          "enum": [
+            "direct-empirical-inconsistency",
+            "methodological-artifact",
+            "contextual-divergence",
+            "conceptual-disagreement"
+          ]
+        },
+        "findingRefs": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "common.schema.json#/definitions/relatedFinding"
+          }
+        },
+        "possibleExplanations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "value"
+            ],
+            "properties": {
+              "type": {
+                "enum": [
+                  "context",
+                  "measurement",
+                  "method",
+                  "definition",
+                  "population",
+                  "other"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "reviewState": {
+          "$ref": "common.schema.json#/definitions/reviewState"
+        },
+        "created": {
+          "$ref": "common.schema.json#/definitions/timestamp"
+        },
+        "modified": {
+          "$ref": "common.schema.json#/definitions/timestamp"
+        }
+      }
+    }
+  }
+}

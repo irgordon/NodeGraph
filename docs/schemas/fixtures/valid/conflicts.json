@@ -1,0 +1,46 @@
+{
+  "schema": {
+    "name": "nodegraph-conflicts",
+    "version": "1.0.0"
+  },
+  "conflicts": [
+    {
+      "conflictId": "conflict_001",
+      "claimId": "claim_001",
+      "conflictType": "contextual-divergence",
+      "findingRefs": [
+        {
+          "paperId": "paper_001",
+          "findingId": "finding_001",
+          "relationship": "supports"
+        },
+        {
+          "paperId": "paper_002",
+          "findingId": "finding_002",
+          "relationship": "qualifies"
+        }
+      ],
+      "possibleExplanations": [
+        {
+          "type": "context",
+          "value": "The studies use different organizational settings."
+        }
+      ],
+      "reviewState": {
+        "verification": {
+          "source": "verified",
+          "interpretation": "verified",
+          "classification": "verified"
+        },
+        "approval": {
+          "researcher": "approved",
+          "advisor": "not-reviewed"
+        },
+        "origin": "human"
+      },
+      "created": "2026-07-30T12:00:00Z",
+      "modified": "2026-07-30T12:00:00Z"
+    }
+  ],
+  "modified": "2026-07-30T12:00:00Z"
+}

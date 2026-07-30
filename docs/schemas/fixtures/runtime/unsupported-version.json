@@ -1,0 +1,10 @@
+{
+  "documentVersion": "2.0.0",
+  "supportedVersions": [
+    "1.0.0"
+  ],
+  "expected": {
+    "mode": "read-only",
+    "code": "unsupported-newer-version"
+  }
+}

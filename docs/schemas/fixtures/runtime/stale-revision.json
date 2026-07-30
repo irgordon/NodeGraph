@@ -1,0 +1,25 @@
+{
+  "currentRevision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "mutation": {
+    "mutationId": "mutation_stale",
+    "targetDocument": "synthesis/claims.json",
+    "baseRevision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "operations": [
+      {
+        "op": "test",
+        "path": "/claims/0/claimId",
+        "value": "claim_001"
+      }
+    ],
+    "requestedAt": "2026-07-30T12:00:00Z",
+    "actor": {
+      "type": "human",
+      "id": "researcher"
+    }
+  },
+  "expected": {
+    "accepted": false,
+    "code": "stale-revision",
+    "retryable": true
+  }
+}

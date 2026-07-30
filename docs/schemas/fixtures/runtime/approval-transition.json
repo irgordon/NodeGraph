@@ -1,0 +1,18 @@
+{
+  "actor": {
+    "type": "agent",
+    "id": "synthesis-agent"
+  },
+  "before": {
+    "researcher": "not-reviewed",
+    "advisor": "not-reviewed"
+  },
+  "after": {
+    "researcher": "approved",
+    "advisor": "not-reviewed"
+  },
+  "expected": {
+    "authorized": false,
+    "code": "approval-authority-required"
+  }
+}
