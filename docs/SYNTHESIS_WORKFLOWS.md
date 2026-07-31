@@ -3,7 +3,7 @@
 **Status:** v0.5 (Task 0 contract baseline)
 **Related documents:** `ARCHITECTURE.md` · `SYNTHESIS_DOMAIN_MODEL.md` · `ROADMAP.md`
 
-This document owns the proposed user- and agent-facing synthesis operations that act on the domain model defined in `SYNTHESIS_DOMAIN_MODEL.md`, within the boundaries defined in `ARCHITECTURE.md`. NodeGraph 0.7.2 already opens and edits single-paper graphs, jumps from quotations to PDFs, and exports single-paper HTML; every synthesis workflow below remains proposed.
+This document owns the later user- and agent-facing synthesis operations that act on the domain model defined in `SYNTHESIS_DOMAIN_MODEL.md`, within the boundaries defined in `ARCHITECTURE.md`. The 0.0.0 development baseline preserves single-paper editing, PDF quote checks, and HTML export, and implements the Phase 1 project and integrity foundation described in `PROJECTS.md`. The synthesis workflows below remain planned for Phase 2 and later.
 
 ---
 
@@ -128,4 +128,4 @@ Transition to next section
 - BibTeX / RIS references
 - Appendix-ready audit trail
 
-The existing 0.7.2 HTML exporter (graph + images, standalone viewer) is retained unchanged for sharing/viewing. Every structured synthesis export listed above remains proposed and is outside Task 0. Future exported content passes through the same sanitization boundary as the webview (`ARCHITECTURE.md` §15) — no unescaped agent-authored HTML in exports.
+The existing 0.7.2 HTML exporter (graph + images, standalone viewer) is retained unchanged for sharing/viewing. Every structured synthesis export listed above remains planned and is outside Phase 1. Future exported content passes through the same sanitization boundary as the webview (`ARCHITECTURE.md` §15) — no unescaped agent-authored HTML in exports.

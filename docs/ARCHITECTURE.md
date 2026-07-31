@@ -1,6 +1,6 @@
 # NodeGraph — Architecture
 
-**Status:** v0.5 (Task 0 contract baseline)
+**Status:** Phase 1 development baseline (application 0.0.0)
 **Related documents:** `SYNTHESIS_DOMAIN_MODEL.md` · `SYNTHESIS_WORKFLOWS.md` · `ROADMAP.md`
 
 This document is the stable technical contract for the NodeGraph synthesis extension. It defines system boundaries, component ownership, persistence, provenance, validation, and scale — the decisions that must hold regardless of which features are built on top of them. Feature requirements, domain rules, and sequencing live in the related documents above.
@@ -32,28 +32,50 @@ NodeGraph 0.7.2 already provides much of the Level 1–2 foundation, including p
 | Paper-level nodes and quotations | Existing in 0.7.2 |
 | PDF quote-jump verification | Existing in 0.7.2 |
 | Single-paper HTML export | Existing in 0.7.2 |
-| Task 0 synthesis schemas and contract fixtures | Defined and verified |
-| Project manifest repositories and runtime validation | Proposed for Phase 1 |
-| Summary indexes and lazy project queries | Proposed for Phase 1–2 |
-| Synthesis UI and synthesis exports | Proposed; intentionally absent in Task 0 |
+| Task 0 synthesis schemas and contract fixtures | Defined, corrected before runtime use, and verified at schema 1.0.0 |
+| Project manifest, registry, and project commands | Implemented in Phase 1 |
+| Paper and synthesis repository boundaries | Implemented in Phase 1 |
+| Layered validation and `IntegrityService` | Implemented in Phase 1 |
+| Disposable indexes, partial rebuilds, and metadata search | Implemented in Phase 1 |
+| Per-document revisions, atomic writes, and audit events | Implemented in Phase 1 |
+| Synthesis UI and synthesis exports | Planned for later phases; intentionally absent |
 
-Documentation of a proposed component does not imply that the component is already implemented. Runtime status should be updated as capabilities land.
+Later-phase components in this document remain designs until the implementation-status table marks them as available.
 
 ### Existing 0.7.2 Implementation Map
 
-| Existing code | Current responsibility | Proposed architectural seam |
+| Existing code | Current responsibility | Architectural seam |
 |---|---|---|
 | `src/extension/extension.ts` | Extension activation and command coordination | Extension-host composition root |
-| `src/extension/NodeGraphEditorProvider.ts` | Custom editor adapter, whole-file JSON load/save, link routing, PDF launch, image persistence, and export dispatch | Keep as the single-paper adapter; future persistence delegates to `PaperGraphRepository`, while export and source verification delegate to their own services |
+| `src/extension/NodeGraphEditorProvider.ts` | Custom editor adapter, whole-file JSON load/save, link routing, PDF launch, image persistence, and export dispatch | Remains the unchanged single-paper adapter; project reads use `PaperGraphRepository` separately |
 | `src/webview/types/graph.ts` and `schema/nodegraph.schema.json` | Existing single-paper in-memory and persisted shape | Paper-analysis contract; remains unchanged by synthesis persistence |
 | `src/webview/hooks/useGraph.ts` | Webview editing state, history, dirty-state handling, and save messages | Existing graph-editing logic; no project-state ownership |
-| `src/extension/PdfViewerPanel.ts`, `src/pdfviewer/main.ts`, `src/pdfviewer/textMatch.ts` | PDF loading, quotation search, and visual verification | Source-domain verification adapter; Task 0 does not add persisted synthesis verification |
+| `src/extension/PdfViewerPanel.ts`, `src/pdfviewer/main.ts`, `src/pdfviewer/textMatch.ts` | PDF loading, quotation search, and visual verification | Existing interactive source adapter; Phase 1 adds separate persisted integrity checks without changing it |
 | `src/extension/htmlExporter.ts` | Standalone single-paper HTML generation | Existing `ExportService` implementation for paper graphs; synthesis export remains proposed |
 | `src/extension/imageManager.ts` | Sidecar image paths and file I/O | Paper-asset infrastructure |
 
-`NodeGraphEditorProvider` currently spans several infrastructure concerns. Task 0 records those seams but does not refactor working 0.7.2 runtime code. Phase 1 must not add project repository, integrity, or taxonomy logic directly to that provider.
+`NodeGraphEditorProvider` currently spans several infrastructure concerns. Phase 1 preserves that working single-paper path and keeps project persistence, integrity, indexing, and taxonomy resolution outside the provider.
 
 Task 0 removes the obsolete requirement that every legacy node contain an `images` array from `schema/nodegraph.schema.json`; the 0.7.2 TypeScript model and shipped demos already treat that field as absent. This aligns validation with the existing format and changes no runtime or persisted graph.
+
+### Phase 1 Runtime Map
+
+| Phase 1 code | Responsibility |
+|---|---|
+| `src/extension/project/ProjectRegistry.ts` | Create and open projects; register paper and source identities; load lightweight indexes |
+| `src/extension/project/PaperGraphRepository.ts` | Validate and hydrate one legacy paper graph on demand; expose metadata and nodes |
+| `src/extension/project/SynthesisRepository.ts` | Load authoritative project documents and route mutation-envelope writes |
+| `src/extension/project/ProjectPathResolver.ts` | Reject malformed paths and enforce canonical project-root containment |
+| `src/extension/project/CrossDocumentValidator.ts` | Validate identifiers and references across authoritative project documents |
+| `src/extension/project/IntegrityService.ts` | Report missing files, changed PDFs, stale quotations, broken references, and stale indexes |
+| `src/extension/project/IndexBuilder.ts` | Rebuild disposable paper and evidence indexes, reusing unchanged paper entries |
+| `src/extension/project/MutationRepository.ts` | Enforce per-document revisions, validation, atomic replacement, and mutation audit events |
+| `src/extension/project/AtomicJsonWriter.ts` | Replace authoritative JSON safely and roll back paired derived-index replacements on failure |
+| `src/extension/project/QueryService.ts` | Search normalized index metadata without hydrating paper graphs |
+| `src/extension/project/AuditLog.ts` | Append and inspect JSONL events without rewriting history |
+| `src/extension/project/SchemaVersionPolicy.ts` | Select current-version read-write or unsupported-version read-only behavior |
+| `src/extension/project/Phase1ProjectService.ts` | Coordinate registry, integrity, indexing, and query operations without VS Code APIs |
+| `src/extension/project/ProjectCommands.ts` | Provide the minimum VS Code commands needed to exercise Phase 1 |
 
 ## 4. Core Invariants
 
@@ -146,7 +168,7 @@ Webview
 └── ReviewDashboard
 ```
 
-Each proposed component has one abstraction level and one reason to change. The safety-critical boundaries are specified below:
+Each component has one abstraction level and one reason to change. The safety-critical boundaries are specified below:
 
 **PaperGraphRepository**
 - Reads paper graph files.
@@ -193,7 +215,9 @@ literature-project/
 ├── project.nodegraph.json        # manifest: papers, schema version, settings
 ├── papers/
 │   ├── smith-2024.nodegraph.json
-│   └── jones-2025.nodegraph.json
+│   ├── smith-2024.pdf
+│   ├── jones-2025.nodegraph.json
+│   └── jones-2025.pdf
 ├── synthesis/
 │   ├── claims.json
 │   ├── conflicts.json
@@ -201,6 +225,8 @@ literature-project/
 │   └── research-questions.json
 ├── taxonomy/
 │   └── constructs.json
+├── evidence/
+│   └── records.json
 ├── indexes/
 │   ├── papers.index.json
 │   └── evidence.index.json
@@ -208,9 +234,26 @@ literature-project/
     └── events.jsonl
 ```
 
-`project.nodegraph.json` is a **manifest**, not a database document: it points to subordinate documents rather than embedding their content. This is the architectural decision — the alternative (monolithic document or append-only project store) was considered and rejected for merge-conflict and rebuild-granularity reasons.
+`project.nodegraph.json` is a **manifest**, not a database document: it points to subordinate documents rather than embedding their content. Each `papers[]` registration also owns the paper's stable source identity:
 
-Every persisted path has a draft-07 contract. Paper paths continue to use `schema/nodegraph.schema.json`; claims, conflicts, gaps, research questions, constructs, paper indexes, and evidence indexes use their corresponding files under `docs/schemas/`; each non-empty audit-log line uses `audit-event.schema.json`. Indexes have schemas so corrupt caches are rejected, but they remain derived and disposable rather than authoritative.
+```json
+{
+  "paperId": "paper_001",
+  "path": "papers/smith-2024.nodegraph.json",
+  "source": {
+    "sourceId": "source_001",
+    "relativePath": "papers/smith-2024.pdf",
+    "sourceDocumentHash": "sha256:...",
+    "doi": "10.0000/example",
+    "title": "Example Paper",
+    "version": "publisher-version"
+  }
+}
+```
+
+The source record is authoritative and remains available when either index is deleted. The manifest still points to subordinate documents rather than embedding their content; the alternative monolithic model remains rejected.
+
+Every persisted path has a draft-07 contract. Paper paths continue to use `schema/nodegraph.schema.json`; claims, conflicts, gaps, research questions, constructs, authoritative evidence records, paper indexes, and evidence indexes use their corresponding files under `docs/schemas/`; each non-empty audit-log line uses `audit-event.schema.json`. Indexes have schemas so corrupt caches are rejected, but they remain derived and disposable rather than authoritative. `evidence/records.json` owns evidence; `indexes/evidence.index.json` only accelerates lookup.
 
 ## 8. Provenance and Referential Integrity
 
@@ -225,7 +268,7 @@ Every persisted path has a draft-07 contract. Paper paths continue to use `schem
   "nodeId": "node_claim_04",
   "source": {
     "sourceId": "source_001",
-    "relativePath": "pdfs/smith-2024.pdf",
+    "relativePath": "papers/smith-2024.pdf",
     "sourceDocumentHash": "sha256:..."
   },
   "quote": {
@@ -295,7 +338,7 @@ Three hashes protect different boundaries:
 ```json
 {
   "sourceId": "source_001",
-  "relativePath": "pdfs/smith-2024.pdf",
+  "relativePath": "papers/smith-2024.pdf",
   "sourceDocumentHash": "sha256:...",
   "doi": "...",
   "title": "...",
@@ -303,7 +346,7 @@ Three hashes protect different boundaries:
 }
 ```
 
-A project-level `IntegrityService` check runs before any synthesis pass, reports broken or stale evidence links, and flags orphaned claims. This is a Phase 1 requirement (see `ROADMAP.md`), not a later hardening pass.
+The Phase 1 `IndexBuilder` calls `IntegrityService` while rebuilding. Integrity checks report broken or stale evidence links and flag orphaned references. Invalid records remain available for inspection.
 
 ## 9. Indexing and Query Architecture
 
@@ -314,16 +357,25 @@ Each index entry records enough to determine staleness without opening the full 
 ```json
 {
   "paperId": "paper_001",
+  "paperPath": "papers/smith-2024.nodegraph.json",
   "paperGraphHash": "sha256:...",
+  "sourceDocumentHash": "sha256:...",
+  "title": "Example Paper",
+  "authors": ["A. Researcher", "B. Scholar"],
+  "publicationYear": 2024,
+  "doi": "10.0000/example",
+  "tags": ["leadership", "trust"],
   "taxonomyVersion": 12,
   "extractorVersion": "0.3.0",
   "indexedAt": "2026-07-29T23:40:00-04:00"
 }
 ```
 
-`IndexBuilder` produces a compiled per-paper summary index (standardized extraction fields + taxonomy-mapped constructs) that the matrix and dashboards query directly. `QueryService` fetches and hydrates full Level 2 detail (quotation nodes, source text) only when a specific matrix cell or graph node is opened.
+In Phase 1, `IndexBuilder` produces searchable metadata already present in paper graphs: title, authors, publication year when available, DOI, and tags. Indexing and query code share the same whitespace, Unicode, and case normalization rules. Phase 2 may add standardized extraction and taxonomy summaries. `QueryService` fetches a full paper graph only when detailed paper content is requested.
 
-**Partial re-indexing.** When a single paper graph changes (e.g. `smith-2024.nodegraph.json` is edited), `IndexBuilder` compares the file's current content hash against the `paperGraphHash` already stored in `papers.index.json` and rebuilds only the index entries for papers whose hash changed. It does not rebuild the full project index on every edit; this keeps background CPU/IO cost proportional to the size of the change, not the size of the corpus. Fully hydrating 100–300 paper graphs at project open would create unnecessary startup latency and memory pressure, particularly for graphs containing quotations, tables, and images — the incremental summary index exists to avoid that, not because it has been benchmarked as impossible.
+**Partial re-indexing.** When a single paper graph changes (e.g. `smith-2024.nodegraph.json` is edited), `IndexBuilder` compares the file's current content hash against the `paperGraphHash` already stored in `papers.index.json` and rebuilds only entries whose graph hash, registered source identity, taxonomy version, path, or indexer version changed. Removed registrations are omitted from the completed result. It does not rebuild the full project index on every edit; this keeps background CPU/IO cost proportional to the size of the change, not the size of the corpus. Fully hydrating 100–300 paper graphs at project open would create unnecessary startup latency and memory pressure, particularly for graphs containing quotations, tables, and images — the incremental summary index exists to avoid that, not because it has been benchmarked as impossible.
+
+The paper and evidence indexes are fully built and validated in memory before either target changes. `AtomicJsonWriter` stages the pair in the target filesystems and restores both prior indexes if replacement fails. A failed rebuild therefore cannot leave one new index beside one old index. Because both files are derived, a missing or invalid pair remains recoverable from the manifest, paper graphs, and authoritative evidence records.
 
 ## 10. Validation and Trust Boundaries
 
@@ -360,13 +412,13 @@ JSON Schema is only the shape boundary. Runtime services own rules that require 
 
 | Runtime rule | Owner |
 |---|---|
-| Resolve and contain project-relative paths beneath the canonical project root | Repository infrastructure |
-| Resolve cross-document identifiers and require uniqueness | `IntegrityService` |
-| Compare `baseRevision` with the current target-document revision | Repository infrastructure |
+| Resolve and contain project-relative paths beneath the canonical project root | `ProjectPathResolver` |
+| Resolve cross-document identifiers and require uniqueness | `CrossDocumentValidator` |
+| Compare `baseRevision` with the current target-document revision | `MutationRepository` |
 | Recalculate quotation and evidence-object hashes using §8 | `IntegrityService` |
 | Authorize `approval.*` transitions | `ReviewStateService` |
 | Resolve deprecated constructs to one approved primary | `ConstructResolver` |
-| Select migrations or read-only fallback from schema version | `SchemaMigrationService` |
+| Select current-version or unsupported-version read-only behavior | `SchemaVersionPolicy` |
 
 ## 11. State and Review Model
 
@@ -456,14 +508,17 @@ Persisted schema version is tracked independently of extension version:
 - A newer version, or an older version without a registered migration path, opens read-only with an actionable unsupported-version diagnostic.
 - Unsupported documents are never rewritten, downgraded, or partially loaded into writable state.
 - The existing single-paper schema/version remains independent from synthesis schema versions.
+- The corrected `1.0.0` contract is frozen when the first Phase 1 runtime can create or modify a synthesis project. Later persisted-shape changes require a new semantic schema version and an explicit migration path.
+
+No migration is registered in the 0.0.0 application baseline.
 
 ## 17. Concurrency and Transaction Model
 
 Revisions are owned per authoritative document, not project-wide. A document revision is the SHA-256 hash of its recursively key-sorted canonical JSON, excluding formatting differences. The manifest revision changes only when the manifest changes. A corpus revision used by adversarial passes is a separate digest over sorted authoritative document-path/revision pairs plus the taxonomy version.
 
-Every write targets exactly one authoritative document and **MUST** use `mutation-envelope.schema.json`. `baseRevision` is that target document's current revision; creation uses the literal `absent`. A write whose base revision does not match **MUST** fail before any operation is applied.
+Every write targets exactly one authoritative document and **MUST** use `mutation-envelope.schema.json`. `baseRevision` is that target document's current revision. The literal `absent` is accepted only while `ProjectRegistry` initializes a new project. Later mutation paths cannot recreate a missing authoritative document with `absent`. A write whose base revision does not match **MUST** fail before any operation is applied.
 
-This envelope applies to future synthesis repositories. The existing single-paper editor continues its 0.7.2 `WorkspaceEdit` whole-file save path unchanged; Task 0 does not retrofit project concurrency behavior into `NodeGraphEditorProvider`.
+Phase 1 applies this envelope in `SynthesisRepository`, `ProjectRegistry`, and `MutationRepository`. The existing single-paper editor continues its 0.7.2 `WorkspaceEdit` whole-file save path unchanged.
 
 ```json
 {
@@ -478,9 +533,11 @@ This envelope applies to future synthesis repositories. The existing single-pape
 }
 ```
 
-After revision comparison, the repository applies all operations in memory, validates the complete candidate document, writes a temporary sibling file, flushes it, atomically renames it over the target, and flushes the containing directory where the platform supports it. Validation or I/O failure leaves the prior target intact. Multi-document mutations are not atomic and are not supported by this envelope.
+After the initial revision comparison, the repository applies all operations in memory and validates the complete candidate document. It writes and flushes a temporary sibling, compares the target revision again immediately before replacement, atomically renames the temporary file over the target, and flushes the containing directory where the platform supports it. A concurrent revision change is returned as a stale-write conflict with the original operation set. Validation or I/O failure leaves the prior target intact. Multi-document authoritative mutations are not atomic and are not supported by this envelope.
 
-A stale request applies no operations, changes no file, and appends no analytical audit event. It returns:
+Project creation preflights every manifest-owned target before writing. If initialization fails, `ProjectRegistry` removes the files created by that attempt so the same empty project root can be retried. It does not treat an existing subordinate file as disposable project state.
+
+A stale request applies no operations and changes no authoritative target. Phase 1 appends an operational rejection event so the conflict remains visible, but it does not record a successful analytical change. The request returns:
 
 ```json
 {
@@ -493,25 +550,26 @@ A stale request applies no operations, changes no file, and appends no analytica
 }
 ```
 
-After a successful atomic target replacement, the repository appends and flushes the audit event. If that append fails, the document remains committed, the project enters read-only recovery mode, and recovery records the missing event against the mutation ID and resulting revision before writes resume. The system never attempts an unsafe rollback over a possibly newer document.
+Before replacement, the repository verifies that the audit log exists and has a complete final line. A known missing or truncated log blocks the write without changing the authoritative target. Project initialization is the only operation allowed to create a missing audit log.
 
-This contract prevents silent last-write-wins behavior for offline multi-agent and human-plus-agent edits. A future merge UI may replay a rejected operation set against the new revision, but Task 0 introduces no merge or synthesis UI.
+After a successful atomic target replacement, the repository checks the log again, then appends and flushes the audit event. If the log changes or that append otherwise fails after replacement, the document remains committed, the failure reports the committed revision and original audit error, and the active runtime blocks later writes for that project in recovery mode. Other open projects are not blocked. Phase 1 does not attempt an unsafe rollback over a possibly newer document.
+
+This contract prevents silent last-write-wins behavior for offline multi-agent and human-plus-agent edits. A future merge UI may replay a rejected operation set against the new revision; Phase 1 preserves the rejected operations but introduces no merge or synthesis UI.
 
 ## 18. Audit and Decision Provenance
 
 Git history is useful but insufficient because users may not commit after every analytical decision. The system therefore maintains an append-only audit log at `audit/events.jsonl`.
 
-Events include paper import, source-hash change, quotation verification, construct remapping, synthesis-claim creation, evidence addition or removal, conflict reclassification, candidate-gap approval, adversarial-pass execution, research-question linking, advisor review, and schema migration.
+Phase 1 emits project creation, paper registration and removal, source-hash change, index rebuild, accepted document mutation, and rejected stale-revision events. Later phases may add quotation verification, construct remapping, synthesis review, gap, research-question, advisor, and migration events.
 
 ```json
 {
   "eventId": "evt_01J...",
   "timestamp": "2026-07-29T23:40:00-04:00",
-  "actor": { "type": "human", "id": "researcher" },
-  "action": "construct.mapping.approved",
-  "objectId": "mapping_042",
-  "beforeHash": "sha256:...",
-  "afterHash": "sha256:..."
+  "actor": { "type": "service", "id": "IndexBuilder", "version": "0.0.0" },
+  "action": "index.rebuilt",
+  "objectId": "project_dissertation",
+  "metadata": { "full": true }
 }
 ```
 
@@ -530,6 +588,7 @@ Audit events **MUST NOT** be rewritten in place. Corrections are recorded as lat
 
 ## 20. Related Documents
 
+- `PROJECTS.md` — Phase 1 project commands, authority boundaries, validation, index recovery, and compatibility.
 - `SYNTHESIS_DOMAIN_MODEL.md` — evidence levels, constructs, findings, synthesis claims, conflict objects, mechanisms, context, boundary conditions, candidate gaps, research-question alignment, evidence appraisal, methodological paradigms.
 - `SYNTHESIS_WORKFLOWS.md` — import, extraction, normalization, verification, synthesis, conflict review, adversarial gap testing, researcher approval, dissertation planning, exports.
 - `ROADMAP.md` — implementation phases, MVP scope, sequencing rationale.

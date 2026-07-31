@@ -39,6 +39,10 @@
           "paperId",
           "paperPath",
           "paperGraphHash",
+          "sourceDocumentHash",
+          "title",
+          "authors",
+          "tags",
           "taxonomyVersion",
           "extractorVersion",
           "indexedAt"
@@ -55,6 +59,34 @@
           },
           "sourceDocumentHash": {
             "$ref": "common.schema.json#/definitions/sha256"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "authors": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "publicationYear": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 9999
+          },
+          "doi": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
           },
           "taxonomyVersion": {
             "type": "integer",

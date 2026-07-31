@@ -1,0 +1,80 @@
+{
+  "schema": {
+    "name": "nodegraph-evidence-records",
+    "version": "1.0.0"
+  },
+  "evidence": [
+    {
+      "evidenceId": "evidence_001",
+      "paperId": "paper_001",
+      "nodeId": "node_claim_04",
+      "source": {
+        "sourceId": "source_001",
+        "relativePath": "pdfs/paper-001.pdf",
+        "sourceDocumentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "title": "Fixture Paper",
+        "version": "publisher-version"
+      },
+      "quote": {
+        "text": "Shared leadership improves trust.",
+        "quoteContentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "locator": {
+        "page": 14,
+        "prefix": "Earlier sentence.",
+        "exact": "Shared leadership improves trust.",
+        "suffix": "Following sentence.",
+        "section": "Results"
+      },
+      "evidenceObjectHash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "reviewState": {
+        "verification": {
+          "source": "verified",
+          "interpretation": "not-applicable",
+          "classification": "not-applicable"
+        },
+        "approval": {
+          "researcher": "approved",
+          "advisor": "not-reviewed"
+        },
+        "origin": "human"
+      },
+      "created": "2026-07-30T12:00:00Z",
+      "modified": "2026-07-30T12:00:00Z"
+    },
+    {
+      "evidenceId": "evidence_002",
+      "paperId": "paper_002",
+      "nodeId": "node_claim_08",
+      "source": {
+        "sourceId": "source_002",
+        "relativePath": "pdfs/paper-002.pdf",
+        "sourceDocumentHash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      },
+      "quote": {
+        "text": "A second source quotation.",
+        "quoteContentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999"
+      },
+      "locator": {
+        "page": 8,
+        "exact": "A second source quotation."
+      },
+      "evidenceObjectHash": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "reviewState": {
+        "verification": {
+          "source": "pending",
+          "interpretation": "not-applicable",
+          "classification": "not-applicable"
+        },
+        "approval": {
+          "researcher": "not-reviewed",
+          "advisor": "not-reviewed"
+        },
+        "origin": "imported"
+      },
+      "created": "2026-07-30T12:00:00Z",
+      "modified": "2026-07-30T12:00:00Z"
+    }
+  ],
+  "modified": "2026-07-30T12:00:00Z"
+}

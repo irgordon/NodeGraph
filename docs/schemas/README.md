@@ -12,11 +12,12 @@ These schemas stabilize the proposed synthesis persistence contract without chan
 | `documents.gaps` | `gaps.schema.json` |
 | `documents.researchQuestions` | `research-questions.schema.json` |
 | `documents.constructs` | `construct-taxonomy.schema.json` |
+| `documents.evidence` | `evidence-records.schema.json` |
 | `documents.paperIndex` | `paper-index.schema.json` |
 | `documents.evidenceIndex` | `evidence-index.schema.json` |
 | `documents.auditLog` | `audit-event.schema.json`, applied to each non-empty JSONL line |
 
-`project.schema.json` validates the manifest. `evidence.schema.json`, `synthesis-claim.schema.json`, and `adversarial-pass.schema.json` validate reusable records. `mutation-envelope.schema.json` validates one single-document write request.
+`project.schema.json` validates the manifest. Each paper registration owns an authoritative source-document identity through `papers[].source`. `evidence-records.schema.json` is the authoritative evidence collection, while `evidence.schema.json`, `synthesis-claim.schema.json`, and `adversarial-pass.schema.json` validate reusable records. `mutation-envelope.schema.json` validates one single-document write request.
 
 `common.schema.json` is the only definition site for identifiers, project-relative paths, lowercase `sha256:` hashes, timestamps, revision tokens, review states, actors, finding pointers, and relationship values. Runtime TypeScript interfaces must use the same names and values.
 
@@ -28,6 +29,11 @@ These schemas stabilize the proposed synthesis persistence contract without chan
 - `evidenceObjectHash` is a top-level evidence property calculated from the immutable projection defined in `ARCHITECTURE.md` §8. It excludes itself, paths, review state, timestamps, and descriptive source metadata.
 - Relationship values are the ten kebab-case strings defined by `common.schema.json#/definitions/relationship`.
 - A deprecated construct requires `primaryConstructId`; runtime validation requires that target to be distinct, approved, and non-deprecated.
+- Paper-index metadata is derived and searchable. Evidence-index entries are derived from `documents.evidence`; neither index owns source identity or evidence.
+
+## Pre-runtime 1.0.0 Correction
+
+Before the first synthesis-project runtime existed, the `1.0.0` contract was corrected to add authoritative source records, an authoritative evidence collection, and searchable paper-index metadata. No released runtime data used the incomplete shape, so this is not a migration. The first Phase 1 runtime that can create or modify a synthesis project freezes `1.0.0`. Later persisted-shape changes require a new semantic schema version and an explicit migration path.
 
 ## Runtime Validation Boundary
 

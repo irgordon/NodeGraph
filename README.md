@@ -4,7 +4,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/VS%20Code-Extension-007ACC?logo=visualstudiocode&logoColor=white&style=for-the-badge" alt="VS Code Extension" />
-  <img src="https://img.shields.io/badge/version-0.7.2-orange?style=for-the-badge" alt="Version 0.7.2" />
+  <img src="https://img.shields.io/badge/version-0.0.0-orange?style=for-the-badge" alt="Version 0.0.0" />
   <img src="https://img.shields.io/badge/license-MIT-brightgreen?style=for-the-badge" alt="MIT License" />
 </p>
 
@@ -14,17 +14,17 @@
 
 NodeGraph turns research PDFs into visual, source-backed notes. Use an AI agent to build a graph, or create one by hand. Each claim can link to an exact quote, so you can open the source PDF and check the text for yourself.
 
-This fork is growing NodeGraph into a multi-paper research workspace. The goal is to help researchers move from reading separate papers to comparing a full body of work in one clear view.
+This fork begins a new NodeGraph application built for multi-paper research. It starts from the working NodeGraph 0.7.2 editor while beginning its own version history at 0.0.0.
 
-> **Development status:** NodeGraph 0.7.2 is a working VS Code extension for single-paper analysis. The proposed multi-paper tools are planned and are not in the app yet. Existing `.nodegraph.json` files will keep their current format and will continue to open and export as they do today.
+> **Development status:** Phase 1 is now implemented in the development branch. NodeGraph can create a local literature project, register paper graphs and PDFs, search paper metadata, check source links, rebuild indexes, and reject outdated writes. Existing `.nodegraph.json` files keep their current format and continue to open, edit, verify, and export as before. Comparison screens and later synthesis workflows are still planned.
 
 ---
 
 ## Built for Doctoral Research
 
-The proposed workspace is designed to support doctoral-level work that examines many PDFs and analyzes the papers together. It will help researchers compare claims, methods, populations, findings, and open questions across a large reading list without losing the link to the original source.
+The workspace is designed to support doctoral-level work that examines many PDFs and analyzes the papers together. Phase 1 creates a trusted project foundation for a large reading list while keeping each paper linked to its source PDF.
 
-The planned workflow will help you:
+The full product direction will help you:
 
 - Bring many paper graphs into one research project.
 - Compare papers by topic, method, population, theory, setting, and finding.
@@ -37,21 +37,22 @@ The planned workflow will help you:
 
 This approach is meant for literature reviews, dissertation planning, qualifying papers, evidence reviews, and other projects where the quality of the source trail matters as much as the final insight.
 
-### What is ready and what is proposed
+### What is ready and what comes next
 
-| Available in NodeGraph 0.7.2 | Proposed for the multi-paper workspace |
+| Available now | Planned for later phases |
 |---|---|
-| Visual editing for one paper at a time | One project for many papers and PDFs |
-| Exact quotes stored with paper notes | Shared comparison fields across papers |
-| One-click quote checks in the source PDF | Paper-by-topic and paper-by-method views |
-| Manual and AI-assisted graph creation | Cross-paper claims, conflicts, gaps, and research questions |
-| Search, rich tables, math, and images | Researcher review queues and a record of key decisions |
-| Self-contained HTML export for one graph | Comparison tables, claim lists, outlines, and research reports |
+| Visual editing, PDF quote checks, and HTML export for one paper | Shared comparison fields and synthesis matrix views |
+| Local projects that register many paper graphs and PDFs | Cross-paper claims and conflict review |
+| Search across indexed title, author, year, DOI, paper ID, and tags | Gap testing and research-question workflows |
+| Checks for missing files, changed PDFs, stale quotes, and broken evidence links | Researcher review screens and dissertation planning |
+| Rebuildable paper and evidence indexes | Comparison tables, outlines, and synthesis reports |
+| Safe project writes with revision checks and an audit record | A visual workflow for merging competing edits |
 
-The first phase will add the project structure, paper list, cross-paper search, file checks, and source-link checks. Later phases will add comparison views, research claims, conflict review, gap testing, research-question support, and dissertation planning.
+Phase 1 provides the project structure and trust checks needed before deeper analysis is added. Later phases will add comparison views, research claims, conflict review, gap testing, research-question support, and dissertation planning.
 
-Read the proposed product and technical plans:
+Read the product and technical plans:
 
+- [Literature project guide](docs/PROJECTS.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Research model](docs/SYNTHESIS_DOMAIN_MODEL.md)
 - [Research workflows](docs/SYNTHESIS_WORKFLOWS.md)
@@ -89,7 +90,7 @@ Read the proposed product and technical plans:
 
 A paper is a straight line of text, but its ideas are connected. A finding may depend on a method, a population, an earlier claim, or a limit that appears many pages later. NodeGraph makes those links visible.
 
-The current app helps you take one paper apart and verify your notes against the source. The proposed workspace adds the next step: compare that paper with the rest of your collection. It will keep agreements, conflicts, limits, and missing evidence visible instead of blending every paper into one summary.
+The single-paper editor helps you take one paper apart and verify your notes against the source. The literature project now organizes many of those graphs, searches their metadata, and checks that their source trail remains intact. Planned comparison tools will make agreements, conflicts, limits, and missing evidence visible instead of blending every paper into one summary.
 
 AI can speed up the work, but the researcher stays in charge. AI-created notes and links will remain suggestions until a researcher reviews them. Important conclusions will keep a clear path back to the PDFs that support them.
 
@@ -116,7 +117,7 @@ AI can speed up the work, but the researcher stays in charge. AI-created notes a
 
 ## Features
 
-The features below are available today in NodeGraph 0.7.2.
+The single-paper features below remain available in the 0.0.0 development baseline.
 
 | | |
 |---|---|
@@ -300,7 +301,7 @@ Matched text inside each node is additionally marked (inverse template color + u
 
 Install **NodeGraph** from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=JeongjinHan.nodegraph), or search "NodeGraph" in VS Code's Extensions view (`Ctrl+Shift+X`) and click Install. A packaged `.vsix` (`packages/nodegraph-<version>.vsix`) is also available in this repo if you'd rather install that directly.
 
-> The Marketplace release provides the current single-paper experience. The proposed multi-paper workspace is not included in that release yet.
+> The Marketplace release provides the upstream single-paper experience. The new 0.0.0 project foundation is currently available from this fork's development build.
 
 <details>
 <summary><b>Getting started</b></summary>
@@ -406,6 +407,13 @@ Images are stored in a `.<graphname>-imgs/` folder next to the JSON file.
 | `NodeGraph: New Graph` | — | Create a new empty graph. Right-click a folder in the Explorer to target it directly; from the Command Palette it targets the workspace's only folder, or prompts you to pick one if there are several |
 | `NodeGraph: Search Nodes` | `Ctrl+F` / `Cmd+F` | Open search dropdown |
 | `NodeGraph: Copy Agent Spec to Workspace` | — | Write `.agent/NODEGRAPH_SPEC.md`, `.agent/ENVIRONMENT.md`, and `.prompt/{korean,english}.md` into a folder so an AI agent can read them. Same folder-targeting as New Graph above |
+| `NodeGraph: Create Literature Project` | — | Create a local multi-paper project and its authoritative records |
+| `NodeGraph: Open Literature Project` | — | Open a project manifest and lightweight indexes without loading every graph |
+| `NodeGraph: Register Project Paper` | — | Register an existing graph and its source PDF without changing either file |
+| `NodeGraph: Unregister Project Paper` | — | Remove a paper registration without deleting the graph or PDF |
+| `NodeGraph: Validate Literature Project` | — | Check files, paths, source hashes, evidence links, and index freshness |
+| `NodeGraph: Rebuild Project Indexes` | — | Recreate disposable paper and evidence indexes from authoritative files |
+| `NodeGraph: Search Project Papers` | — | Search indexed paper metadata across the project |
 
 ---
 
@@ -418,16 +426,17 @@ Images are stored in a `.<graphname>-imgs/` folder next to the JSON file.
 | Math / rendering | KaTeX, custom Markdown-lite renderer, SVG wire routing (A*) |
 | PDF | `pdfjs-dist` (custom minimal renderer, not the prebuilt viewer toolkit) |
 | Build | esbuild |
-| Storage today | Plain JSON on disk (`.nodegraph.json`) — no accounts, no external services |
-| Planned project storage | More local JSON files for project records; existing `.nodegraph.json` files stay unchanged |
+| Storage | Plain local JSON for paper graphs and project records — no accounts or hosted database |
+| Project safety | Schema checks, contained paths, source hashes, per-file revisions, atomic writes, and append-only audit events |
 
 ---
 
 ## Privacy
 
-NodeGraph does **not** collect, store, or send any data to external servers. The proposed multi-paper workspace will follow the same local-first approach.
+NodeGraph does **not** collect, store, or send any data to external servers. The multi-paper project foundation follows the same local-first approach.
 
-- Today, everything lives in the `.nodegraph.json` file and local image assets next to it — no accounts, no telemetry, no analytics
-- The proposed project layer will store its added records as local JSON files
+- Single-paper work lives in the `.nodegraph.json` file and local image assets next to it
+- Multi-paper project records and indexes are stored as local JSON and JSONL files
+- There are no accounts, telemetry, or analytics
 - The editor loads KaTeX from the extension's own bundled assets (no CDN, no network)
 - The one exception: opening an **exported HTML file** in a browser loads KaTeX from a CDN, since that file is meant to be viewed outside VS Code — the editor itself never does this

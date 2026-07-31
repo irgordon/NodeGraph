@@ -14,6 +14,7 @@ const FIXTURE_ROOT = path.join(SCHEMA_ROOT, 'fixtures')
 const VALID_CASES = [
   ['project.schema.json', 'valid/project.nodegraph.json'],
   ['evidence.schema.json', 'valid/evidence.json'],
+  ['evidence-records.schema.json', 'valid/evidence-records.json'],
   ['synthesis-claims.schema.json', 'valid/synthesis-claims.json'],
   ['conflicts.schema.json', 'valid/conflicts.json'],
   ['gaps.schema.json', 'valid/gaps.json'],
@@ -31,6 +32,11 @@ const INVALID_CASES = [
   ['construct-taxonomy.schema.json', 'invalid/deprecated-construct-without-primary.json'],
   ['synthesis-claim.schema.json', 'invalid/unsupported-relationship.json'],
   ['gaps.schema.json', 'invalid/approved-gap-without-adversarial-pass.json'],
+  ['project.schema.json', 'invalid/missing-source-hash-project.json'],
+  ['project.schema.json', 'invalid/malformed-source-hash-project.json'],
+  ['project.schema.json', 'invalid/absolute-source-path-project.json'],
+  ['project.schema.json', 'invalid/traversal-source-path-project.json'],
+  ['paper-index.schema.json', 'invalid/malformed-paper-index-metadata.json'],
 ]
 
 function main() {
@@ -69,6 +75,8 @@ function validateRuntimeContracts(context) {
   validateTaxonomyResolution()
   validateInactiveTaxonomyResolution()
   validateUnsupportedVersionFallback()
+  validateMissingAuthoritativeEvidence()
+  validateEvidenceIndexRebuild(context)
 }
 
 function createAjv() {
@@ -124,8 +132,12 @@ function walkFiles(directory) {
 function validatePathContainment() {
   const project = readFixture('invalid/traversal-project.json')
   const evidence = readFixture('invalid/absolute-evidence.json')
+  const absoluteSource = readFixture('invalid/absolute-source-path-project.json')
+  const traversalSource = readFixture('invalid/traversal-source-path-project.json')
   assertThrowsCode(() => contracts.resolveProjectPath('/project', project.papers[0].path), 'path-traversal')
   assertThrowsCode(() => contracts.resolveProjectPath('/project', evidence.source.relativePath), 'absolute-path')
+  assertThrowsCode(() => contracts.resolveProjectPath('/project', absoluteSource.papers[0].source.relativePath), 'absolute-path')
+  assertThrowsCode(() => contracts.resolveProjectPath('/project', traversalSource.papers[0].source.relativePath), 'path-traversal')
 }
 
 function validateStaleRevision(context) {
@@ -177,11 +189,28 @@ function validateUnsupportedVersionFallback() {
   assertSubset(actual, fixture.expected, 'unsupported schema fallback')
 }
 
+function validateMissingAuthoritativeEvidence() {
+  const bundle = loadValidBundle()
+  const fixture = readFixture('runtime/missing-authoritative-evidence.json')
+  bundle.evidenceRecords.evidence = bundle.evidenceRecords.evidence
+    .filter(evidence => evidence.evidenceId !== fixture.removedEvidenceId)
+  assertIncludes(validateReferences(bundle), fixture.expectedCode, 'missing authoritative evidence')
+}
+
+function validateEvidenceIndexRebuild(context) {
+  const evidenceRecords = readFixture('valid/evidence-records.json')
+  const fixture = readFixture('runtime/evidence-index-rebuild.json')
+  const rebuilt = contracts.rebuildEvidenceIndex(evidenceRecords, fixture.indexedAt)
+  validateInline(context, 'evidence-index.schema.json', rebuilt, 'rebuilt evidence index')
+  assertDeepEqual(rebuilt, fixture.expected, 'lossless evidence index rebuild')
+}
+
 function loadValidBundle() {
   return {
     project: readFixture('valid/project.nodegraph.json'),
     paperIndex: readFixture('valid/paper-index.json'),
     evidenceIndex: readFixture('valid/evidence-index.json'),
+    evidenceRecords: readFixture('valid/evidence-records.json'),
     claims: readFixture('valid/synthesis-claims.json'),
     conflicts: readFixture('valid/conflicts.json'),
     gaps: readFixture('valid/gaps.json'),
@@ -203,7 +232,7 @@ function validateReferences(bundle) {
 function buildReferenceIndexes(bundle) {
   return {
     papers: new Set(bundle.paperIndex.entries.map(entry => entry.paperId)),
-    evidence: new Set(bundle.evidenceIndex.entries.map(entry => entry.evidenceId)),
+    evidence: new Set(bundle.evidenceRecords.evidence.map(entry => entry.evidenceId)),
     claims: new Set(bundle.claims.claims.map(claim => claim.claimId)),
     gaps: new Set(bundle.gaps.gaps.map(gap => gap.gapId)),
     constructs: bundle.taxonomy,
@@ -274,6 +303,10 @@ function assertEqual(actual, expected, label) {
   if (actual !== expected) fail(`${label}: expected ${expected}, received ${actual}`)
 }
 
+function assertDeepEqual(actual, expected, label) {
+  assertEqual(contracts.canonicalJson(actual), contracts.canonicalJson(expected), label)
+}
+
 function readFixture(relativePath) {
   return readJson(path.join(FIXTURE_ROOT, relativePath))
 }
@@ -284,7 +317,7 @@ function readJson(filePath) {
 
 function reportSuccess() {
   const legacyCount = findLegacyGraphs().length
-  console.log(`Contract verification passed: ${VALID_CASES.length} valid, ${INVALID_CASES.length} invalid, ${legacyCount} legacy graphs, 8 runtime rules`)
+  console.log(`Contract verification passed: ${VALID_CASES.length} valid, ${INVALID_CASES.length} invalid, ${legacyCount} legacy graphs, 10 runtime rules`)
 }
 
 function fail(message, details) {

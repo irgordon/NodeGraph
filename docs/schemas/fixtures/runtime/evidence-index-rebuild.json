@@ -1,0 +1,30 @@
+{
+  "indexedAt": "2026-07-30T13:00:00Z",
+  "expected": {
+    "schema": {
+      "name": "nodegraph-evidence-index",
+      "version": "1.0.0"
+    },
+    "generatedAt": "2026-07-30T13:00:00Z",
+    "entries": [
+      {
+        "evidenceId": "evidence_001",
+        "paperId": "paper_001",
+        "nodeId": "node_claim_04",
+        "evidenceObjectHash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "quoteContentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "sourceDocumentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "indexedAt": "2026-07-30T13:00:00Z"
+      },
+      {
+        "evidenceId": "evidence_002",
+        "paperId": "paper_002",
+        "nodeId": "node_claim_08",
+        "evidenceObjectHash": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "quoteContentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+        "sourceDocumentHash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "indexedAt": "2026-07-30T13:00:00Z"
+      }
+    ]
+  }
+}

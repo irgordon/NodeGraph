@@ -154,6 +154,35 @@
         }
       }
     },
+    "sourceDocument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceId",
+        "relativePath",
+        "sourceDocumentHash"
+      ],
+      "properties": {
+        "sourceId": {
+          "$ref": "#/definitions/sourceId"
+        },
+        "relativePath": {
+          "$ref": "#/definitions/projectRelativePath"
+        },
+        "sourceDocumentHash": {
+          "$ref": "#/definitions/sha256"
+        },
+        "doi": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
     "reviewState": {
       "type": "object",
       "additionalProperties": false,

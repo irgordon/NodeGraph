@@ -28,33 +28,7 @@
       "minLength": 1
     },
     "source": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "sourceId",
-        "relativePath",
-        "sourceDocumentHash"
-      ],
-      "properties": {
-        "sourceId": {
-          "$ref": "common.schema.json#/definitions/sourceId"
-        },
-        "relativePath": {
-          "$ref": "common.schema.json#/definitions/projectRelativePath"
-        },
-        "sourceDocumentHash": {
-          "$ref": "common.schema.json#/definitions/sha256"
-        },
-        "doi": {
-          "type": "string"
-        },
-        "title": {
-          "type": "string"
-        },
-        "version": {
-          "type": "string"
-        }
-      }
+      "$ref": "common.schema.json#/definitions/sourceDocument"
     },
     "quote": {
       "type": "object",

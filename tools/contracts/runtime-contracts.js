@@ -15,6 +15,16 @@ function calculateDocumentRevision(document) {
   return sha256(canonicalJson(document))
 }
 
+function rebuildEvidenceIndex(evidenceDocument, indexedAt) {
+  return {
+    schema: { name: 'nodegraph-evidence-index', version: '1.0.0' },
+    generatedAt: indexedAt,
+    entries: evidenceDocument.evidence
+      .map(evidence => buildEvidenceIndexEntry(evidence, indexedAt))
+      .sort((left, right) => left.evidenceId.localeCompare(right.evidenceId)),
+  }
+}
+
 function buildEvidenceHashProjection(evidence) {
   return {
     evidenceId: evidence.evidenceId,
@@ -22,6 +32,18 @@ function buildEvidenceHashProjection(evidence) {
     source: buildSourceProjection(evidence.source),
     quote: buildQuoteProjection(evidence.quote),
     locator: buildLocatorProjection(evidence.locator),
+  }
+}
+
+function buildEvidenceIndexEntry(evidence, indexedAt) {
+  return {
+    evidenceId: evidence.evidenceId,
+    paperId: evidence.paperId,
+    ...(evidence.nodeId === undefined ? {} : { nodeId: evidence.nodeId }),
+    evidenceObjectHash: evidence.evidenceObjectHash,
+    quoteContentHash: evidence.quote.quoteContentHash,
+    sourceDocumentHash: evidence.source.sourceDocumentHash,
+    indexedAt,
   }
 }
 
@@ -193,6 +215,7 @@ module.exports = {
   canonicalJson,
   evaluateMutation,
   normalizeEvidenceText,
+  rebuildEvidenceIndex,
   resolveConstructId,
   resolveProjectPath,
   selectSchemaMode,

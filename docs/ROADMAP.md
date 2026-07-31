@@ -1,6 +1,6 @@
 # NodeGraph — Synthesis Layer Roadmap
 
-**Status:** v0.5 (Task 0 contract baseline)
+**Status:** Phase 1 implemented in the 0.0.0 development baseline
 **Related documents:** `ARCHITECTURE.md` · `SYNTHESIS_DOMAIN_MODEL.md` · `SYNTHESIS_WORKFLOWS.md`
 
 Schema validation, provenance integrity, and taxonomy normalization are load-bearing for every later phase and are not deferred — data accumulated before they exist would require costly migration once governance is retrofitted. Phases below reflect that ordering.
@@ -20,6 +20,8 @@ Task 0 establishes a verified NodeGraph 0.7.2 fork and settles persistence contr
 
 Task 0 contains documentation, schemas, fixtures, and contract verification tooling only. It introduces no project repository, `IntegrityService`, synthesis UI, or other Phase 1 implementation.
 
+Before Phase 1 runtime work began, the unimplemented `1.0.0` contract was corrected to add authoritative source records, authoritative evidence storage, and searchable paper-index metadata. This was a pre-runtime correction, not a migration. The first Phase 1 runtime that can write project data freezes schema `1.0.0`.
+
 ### Task 0 exit criteria
 
 - A clean upstream checkout builds with the documented production command.
@@ -33,10 +35,13 @@ Task 0 contains documentation, schemas, fixtures, and contract verification tool
 
 ## Phase 1 — Multi-paper project support + integrity foundation
 
+**Status:** Implemented and covered by the Phase 1 integration suite.
+
 - Project manifest + subordinate-document structure (`ARCHITECTURE.md` §7)
 - Paper registry, shared templates, metadata indexing, cross-paper search
 - Strict schema validation (syntactic + structural, `ARCHITECTURE.md` §10)
 - `IntegrityService`: evidence-link and provenance checker (`ARCHITECTURE.md` §8)
+- Per-document revision checks, atomic writes, and append-only operational audit events
 
 ### Phase 1 exit criteria
 
@@ -45,6 +50,8 @@ Task 0 contains documentation, schemas, fixtures, and contract verification tool
 - Replacing a source PDF produces a stale-evidence warning.
 - An index can be deleted and rebuilt without loss of authoritative state.
 - A write based on a stale revision is rejected rather than overwritten.
+
+The implemented Phase 1 surface is deliberately small: VS Code commands exercise project creation, opening, paper registration and removal, validation, full index recovery, and indexed metadata search. No Phase 2 synthesis matrix or standardized extraction UI is included.
 
 ## Phase 2 — Standardized extraction + normalization + synthesis matrix
 

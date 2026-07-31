@@ -2,6 +2,9 @@ import * as vscode from 'vscode'
 import { NodeGraphEditorProvider } from './NodeGraphEditorProvider'
 import { writeEnvironmentReport, writeEnvironmentReportToFolder, syncAgentSpec, syncPromptTemplates } from './environmentChecker'
 import { createEmptyGraph } from './defaultGraph'
+import { createProjectRuntime } from './project/ProjectRuntime'
+import { Phase1ProjectService } from './project/Phase1ProjectService'
+import { registerProjectCommands } from './project/ProjectCommands'
 
 const RECOMMENDED_EXTENSIONS = [
   { id: 'tomoki1207.pdf', name: 'vscode-pdf (PDF Viewer)' },
@@ -55,9 +58,13 @@ async function createNewGraph(clickedUri?: vscode.Uri): Promise<void> {
 }
 
 export function activate(context: vscode.ExtensionContext): void {
+  const projectRuntime = createProjectRuntime({ extensionRoot: context.extensionPath })
+  const projectService = new Phase1ProjectService(projectRuntime)
+
   context.subscriptions.push(
     NodeGraphEditorProvider.register(context)
   )
+  registerProjectCommands(context, projectService)
 
   // Ctrl+F in the NodeGraph editor opens the in-graph search bar.
   // VSCode intercepts Ctrl+F before the webview JS can see it, so we register

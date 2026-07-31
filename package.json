@@ -2,12 +2,12 @@
   "name": "nodegraph",
   "displayName": "NodeGraph",
   "description": "Node-based knowledge graph for research paper analysis",
-  "version": "0.7.2",
+  "version": "0.0.0",
   "publisher": "JeongjinHan",
   "icon": "resources/icon-hires.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Jeong-jin-Han/NodeGraph"
+    "url": "https://github.com/irgordon/NodeGraph"
   },
   "engines": {
     "vscode": "^1.85.0"
@@ -45,6 +45,34 @@
       {
         "command": "nodegraph.copyAgentSpec",
         "title": "NodeGraph: Copy Agent Spec to Workspace"
+      },
+      {
+        "command": "nodegraph.project.create",
+        "title": "NodeGraph: Create Literature Project"
+      },
+      {
+        "command": "nodegraph.project.open",
+        "title": "NodeGraph: Open Literature Project"
+      },
+      {
+        "command": "nodegraph.project.registerPaper",
+        "title": "NodeGraph: Register Project Paper"
+      },
+      {
+        "command": "nodegraph.project.unregisterPaper",
+        "title": "NodeGraph: Unregister Project Paper"
+      },
+      {
+        "command": "nodegraph.project.validate",
+        "title": "NodeGraph: Validate Literature Project"
+      },
+      {
+        "command": "nodegraph.project.rebuildIndexes",
+        "title": "NodeGraph: Rebuild Project Indexes"
+      },
+      {
+        "command": "nodegraph.project.search",
+        "title": "NodeGraph: Search Project Papers"
       }
     ],
     "menus": {
@@ -56,6 +84,11 @@
         },
         {
           "command": "nodegraph.copyAgentSpec",
+          "when": "explorerResourceIsFolder",
+          "group": "nodegraph"
+        },
+        {
+          "command": "nodegraph.project.create",
           "when": "explorerResourceIsFolder",
           "group": "nodegraph"
         }
@@ -72,7 +105,10 @@
   },
   "scripts": {
     "compile": "node esbuild.js",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run test:contracts && npm run test:phase1",
     "test:contracts": "node tools/validate-synthesis-contracts.js",
+    "test:phase1": "node tools/run-phase1-tests.js",
     "watch": "node esbuild.js --watch",
     "vscode:prepublish": "node esbuild.js --production"
   },

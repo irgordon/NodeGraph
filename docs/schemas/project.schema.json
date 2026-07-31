@@ -52,7 +52,8 @@
         "additionalProperties": false,
         "required": [
           "paperId",
-          "path"
+          "path",
+          "source"
         ],
         "properties": {
           "paperId": {
@@ -61,8 +62,8 @@
           "path": {
             "$ref": "common.schema.json#/definitions/projectRelativePath"
           },
-          "sourceId": {
-            "$ref": "common.schema.json#/definitions/sourceId"
+          "source": {
+            "$ref": "common.schema.json#/definitions/sourceDocument"
           }
         }
       }
@@ -76,6 +77,7 @@
         "gaps",
         "researchQuestions",
         "constructs",
+        "evidence",
         "paperIndex",
         "evidenceIndex",
         "auditLog"
@@ -94,6 +96,9 @@
           "$ref": "common.schema.json#/definitions/projectRelativePath"
         },
         "constructs": {
+          "$ref": "common.schema.json#/definitions/projectRelativePath"
+        },
+        "evidence": {
           "$ref": "common.schema.json#/definitions/projectRelativePath"
         },
         "paperIndex": {

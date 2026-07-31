@@ -4,7 +4,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/VS%20Code-Extension-007ACC?logo=visualstudiocode&logoColor=white&style=for-the-badge" alt="VS Code Extension" />
-  <img src="https://img.shields.io/badge/version-0.7.2-orange?style=for-the-badge" alt="Version 0.7.2" />
+  <img src="https://img.shields.io/badge/version-0.0.0-orange?style=for-the-badge" alt="Version 0.0.0" />
   <img src="https://img.shields.io/badge/license-MIT-brightgreen?style=for-the-badge" alt="MIT License" />
 </p>
 
@@ -13,6 +13,8 @@
 <p align="center"><b>Turn research papers into verifiable knowledge graphs with AI.</b></p>
 
 Point an AI agent (Claude Code, Codex, Cursor, Antigravity) at a PDF and it reads the paper and builds the whole graph itself, linking every claim back to the exact quote it came from. Prefer to build it yourself? Create a blank `.nodegraph.json` file and use the exact same interactive canvas by hand, no agent required.
+
+> **Development status:** This fork begins an independent application history at 0.0.0. Phase 1 adds local literature projects, indexed paper search, source checks, and safe project writes while preserving the existing single-paper editor.
 
 <p align="center"><b>Don't trust AI summaries. Verify every claim against the original paper in one click.</b></p>
 

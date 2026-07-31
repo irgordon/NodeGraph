@@ -1,5 +1,6 @@
 # Source and build tooling — not needed at runtime
 src/
+tools/
 esbuild.js
 tsconfig.json
 package-lock.json

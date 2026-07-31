@@ -12,27 +12,13 @@
       "sourceDocumentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "title": "Fixture Paper One",
       "authors": [
-        "Alex Researcher",
-        "Morgan Scholar"
+        "Alex Researcher"
       ],
-      "publicationYear": 2024,
+      "publicationYear": "2024",
       "doi": "10.1000/paper-001",
       "tags": [
-        "leadership",
-        "trust"
+        "leadership"
       ],
-      "taxonomyVersion": 1,
-      "extractorVersion": "1.0.0",
-      "indexedAt": "2026-07-30T12:00:00Z"
-    },
-    {
-      "paperId": "paper_002",
-      "paperPath": "papers/paper-002.nodegraph.json",
-      "paperGraphHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
-      "sourceDocumentHash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-      "title": "Fixture Paper Two",
-      "authors": [],
-      "tags": [],
       "taxonomyVersion": 1,
       "extractorVersion": "1.0.0",
       "indexedAt": "2026-07-30T12:00:00Z"
