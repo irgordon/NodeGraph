@@ -73,6 +73,30 @@
       {
         "command": "nodegraph.project.search",
         "title": "NodeGraph: Search Project Papers"
+      },
+      {
+        "command": "nodegraph.project.migratePhase2",
+        "title": "NodeGraph: Upgrade Project for Extraction"
+      },
+      {
+        "command": "nodegraph.project.importExtraction",
+        "title": "NodeGraph: Import Extraction Proposal"
+      },
+      {
+        "command": "nodegraph.project.openMatrix",
+        "title": "NodeGraph: Open Synthesis Matrix"
+      },
+      {
+        "command": "nodegraph.project.verifySources",
+        "title": "NodeGraph: Verify Extracted Sources"
+      },
+      {
+        "command": "nodegraph.project.proposeConstruct",
+        "title": "NodeGraph: Propose Construct"
+      },
+      {
+        "command": "nodegraph.project.reviewConstructs",
+        "title": "NodeGraph: Review Construct Proposals"
       }
     ],
     "menus": {
@@ -106,9 +130,10 @@
   "scripts": {
     "compile": "node esbuild.js",
     "typecheck": "tsc --noEmit",
-    "test": "npm run test:contracts && npm run test:phase1",
+    "test": "npm run test:contracts && npm run test:phase1 && npm run test:phase2",
     "test:contracts": "node tools/validate-synthesis-contracts.js",
     "test:phase1": "node tools/run-phase1-tests.js",
+    "test:phase2": "node tools/run-phase2-tests.js",
     "watch": "node esbuild.js --watch",
     "vscode:prepublish": "node esbuild.js --production"
   },

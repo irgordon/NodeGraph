@@ -3,13 +3,17 @@ import {
   CrossDocumentValidator,
   SynthesisBundle,
 } from './CrossDocumentValidator'
+import { hasErrors } from './diagnostics'
 import { MutationRepository } from './MutationRepository'
 import { ProjectPathResolver } from './ProjectPathResolver'
 import { SchemaValidator } from './SchemaValidator'
 import {
   ConflictsDocument,
+  ConstructTaxonomyDocument,
   EvidenceRecordsDocument,
+  ExtractionDocument,
   GapsDocument,
+  MethodologyRegistryDocument,
   MutationEnvelope,
   MutationResult,
   ProjectDiagnostic,
@@ -17,13 +21,18 @@ import {
   ResearchQuestionsDocument,
   SynthesisClaimsDocument,
 } from './types'
-import { ConstructTaxonomyDocument } from './ConstructResolver'
 
 interface DocumentContract {
-  key: keyof SynthesisBundle
+  key: keyof SynthesisBundle | 'extraction' | 'methodologies'
   path: string
   schema: string
   auditAction: string
+}
+
+export interface MutationAuditContext {
+  action: string
+  objectId: string
+  metadata?: Record<string, unknown>
 }
 
 export class SynthesisRepository {
@@ -68,10 +77,74 @@ export class SynthesisRepository {
     )
   }
 
+  public async readMethodologies(
+    projectRoot: string,
+    manifest: ProjectManifest
+  ): Promise<{ value?: MethodologyRegistryDocument; diagnostics: ProjectDiagnostic[] }> {
+    if (!manifest.documents.methodologies) {
+      return { diagnostics: [missingPhase2Document('methodologies')] }
+    }
+    const read = await this.readDocument<MethodologyRegistryDocument>(
+      projectRoot,
+      manifest.documents.methodologies,
+      'methodology-registry.schema.json'
+    )
+    if (!read.value) return read
+    const diagnostics = [
+      ...read.diagnostics,
+      ...this.crossDocuments.validateMethodologies(
+        read.value,
+        manifest.documents.methodologies
+      ),
+    ]
+    return hasErrors(diagnostics)
+      ? { diagnostics }
+      : { value: read.value, diagnostics }
+  }
+
+  public async readExtraction(
+    projectRoot: string,
+    registration: ProjectManifest['papers'][number]
+  ): Promise<{ value?: ExtractionDocument; diagnostics: ProjectDiagnostic[] }> {
+    if (!registration.extractionPath) {
+      return { diagnostics: [missingPhase2Document(`extraction:${registration.paperId}`)] }
+    }
+    return this.readDocument(
+      projectRoot,
+      registration.extractionPath,
+      'extraction.schema.json'
+    )
+  }
+
+  public validateExtraction(
+    projectRoot: string,
+    manifest: ProjectManifest,
+    registration: ProjectManifest['papers'][number],
+    extraction: ExtractionDocument
+  ): Promise<ProjectDiagnostic[]> {
+    if (!registration.extractionPath) {
+      return Promise.resolve([
+        missingPhase2Document(`extraction:${registration.paperId}`),
+      ])
+    }
+    return this.validateExtractionCandidate(
+      projectRoot,
+      manifest,
+      {
+        key: 'extraction',
+        path: registration.extractionPath,
+        schema: 'extraction.schema.json',
+        auditAction: 'extraction.mutated',
+      },
+      extraction
+    )
+  }
+
   public async applyMutation(
     projectRoot: string,
     manifest: ProjectManifest,
-    envelope: MutationEnvelope
+    envelope: MutationEnvelope,
+    audit?: MutationAuditContext
   ): Promise<MutationResult> {
     const contract = authoritativeContracts(manifest)
       .find(item => item.path === envelope.targetDocument)
@@ -79,8 +152,9 @@ export class SynthesisRepository {
     return this.mutations.apply(projectRoot, envelope, {
       schemaName: contract.schema,
       auditPath: manifest.documents.auditLog,
-      auditAction: contract.auditAction,
-      auditObjectId: envelope.mutationId,
+      auditAction: audit?.action ?? contract.auditAction,
+      auditObjectId: audit?.objectId ?? envelope.mutationId,
+      auditMetadata: audit?.metadata,
       validateCandidate: candidate => this.validateCandidate(
         projectRoot,
         manifest,
@@ -105,10 +179,60 @@ export class SynthesisRepository {
     contract: DocumentContract,
     candidate: unknown
   ): Promise<ProjectDiagnostic[]> {
+    if (contract.key === 'extraction') {
+      return this.validateExtractionCandidate(
+        projectRoot,
+        manifest,
+        contract,
+        candidate
+      )
+    }
+    if (contract.key === 'methodologies') {
+      return this.crossDocuments.validateMethodologies(
+        candidate as MethodologyRegistryDocument,
+        contract.path
+      )
+    }
     const read = await this.readBundle(projectRoot, manifest)
     if (!read.bundle) return read.diagnostics
     const bundle = replaceValidatedBundleDocument(read.bundle, contract.key, candidate)
     return this.crossDocuments.validate(manifest, bundle)
+  }
+
+  private async validateExtractionCandidate(
+    projectRoot: string,
+    manifest: ProjectManifest,
+    contract: DocumentContract,
+    candidate: unknown
+  ): Promise<ProjectDiagnostic[]> {
+    const [evidence, taxonomy, methodologies] = await Promise.all([
+      this.readEvidence(projectRoot, manifest),
+      this.readTaxonomy(projectRoot, manifest),
+      this.readMethodologies(projectRoot, manifest),
+    ])
+    const diagnostics = [
+      ...evidence.diagnostics,
+      ...taxonomy.diagnostics,
+      ...methodologies.diagnostics,
+    ]
+    if (!evidence.value || !taxonomy.value || !methodologies.value) return diagnostics
+    const extraction = candidate as ExtractionDocument
+    const registration = manifest.papers.find(
+      paper => paper.extractionPath === contract.path
+    )
+    if (!registration || extraction.paperId !== registration.paperId) {
+      return [...diagnostics, extractionPaperMismatch(contract.path)]
+    }
+    return [
+      ...diagnostics,
+      ...this.crossDocuments.validateExtraction(
+        manifest,
+        extraction,
+        evidence.value,
+        taxonomy.value,
+        methodologies.value
+      ),
+    ]
   }
 
   private async readBundleDocuments(
@@ -216,8 +340,47 @@ function authoritativeContracts(manifest: ProjectManifest): DocumentContract[] {
     { key: 'gaps', path: manifest.documents.gaps, schema: 'gaps.schema.json', auditAction: 'synthesis.gaps-mutated' },
     { key: 'researchQuestions', path: manifest.documents.researchQuestions, schema: 'research-questions.schema.json', auditAction: 'synthesis.questions-mutated' },
     { key: 'constructs', path: manifest.documents.constructs, schema: 'construct-taxonomy.schema.json', auditAction: 'taxonomy.constructs-mutated' },
+    ...(manifest.documents.methodologies
+      ? [{
+        key: 'methodologies' as const,
+        path: manifest.documents.methodologies,
+        schema: 'methodology-registry.schema.json',
+        auditAction: 'taxonomy.methodologies-mutated',
+      }]
+      : []),
     { key: 'evidence', path: manifest.documents.evidence, schema: 'evidence-records.schema.json', auditAction: 'evidence.records-mutated' },
+    ...manifest.papers.flatMap(paper => paper.extractionPath
+      ? [{
+        key: 'extraction' as const,
+        path: paper.extractionPath,
+        schema: 'extraction.schema.json',
+        auditAction: 'extraction.mutated',
+      }]
+      : []),
   ]
+}
+
+function missingPhase2Document(name: string): ProjectDiagnostic {
+  return {
+    layer: 'syntactic',
+    severity: 'error',
+    code: 'phase2-document-not-registered',
+    file: 'project.nodegraph.json',
+    objectId: name,
+    rule: 'The Phase 2 authoritative document is not registered.',
+    action: 'Run the explicit Phase 2 project migration.',
+  }
+}
+
+function extractionPaperMismatch(file: string): ProjectDiagnostic {
+  return {
+    layer: 'structural',
+    severity: 'error',
+    code: 'extraction-paper-mismatch',
+    file,
+    rule: 'The extraction paper ID does not match its manifest registration.',
+    action: 'Use the extraction document registered for the selected paper.',
+  }
 }
 
 function unsupportedTarget(envelope: MutationEnvelope): MutationResult {

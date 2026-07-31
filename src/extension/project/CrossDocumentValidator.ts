@@ -1,9 +1,12 @@
-import { ConstructResolver, ConstructTaxonomyDocument } from './ConstructResolver'
+import { ConstructResolver } from './ConstructResolver'
 import { diagnostic } from './diagnostics'
 import {
   ConflictsDocument,
+  ConstructTaxonomyDocument,
   EvidenceRecordsDocument,
+  ExtractionDocument,
   GapsDocument,
+  MethodologyRegistryDocument,
   ProjectDiagnostic,
   ProjectManifest,
   ResearchQuestionsDocument,
@@ -21,7 +24,7 @@ export interface SynthesisBundle {
 
 interface ReferenceIndexes {
   papers: Set<string>
-  sources: Map<string, string>
+  sources: Map<string, ProjectManifest['papers'][number]>
   evidence: Set<string>
   claims: Set<string>
   gaps: Set<string>
@@ -41,12 +44,182 @@ export class CrossDocumentValidator {
       ...validateQuestions(bundle, indexes, manifest),
     ]
   }
+
+  public validateExtraction(
+    manifest: ProjectManifest,
+    extraction: ExtractionDocument,
+    evidence: EvidenceRecordsDocument,
+    taxonomy: ConstructTaxonomyDocument,
+    methodologies: MethodologyRegistryDocument
+  ): ProjectDiagnostic[] {
+    const registration = manifest.papers.find(
+      paper => paper.paperId === extraction.paperId
+    )
+    if (!registration) {
+      return [referenceDiagnostic(
+        'missing-paper-reference',
+        extraction.paperId,
+        extraction.extractionId
+      )]
+    }
+    return [
+      ...duplicateExtractionIdentifiers(extraction, registration.extractionPath!),
+      ...validateExtractionEvidence(extraction, evidence, registration.extractionPath!),
+      ...validateExtractionMappings(
+        extraction,
+        taxonomy,
+        registration.extractionPath!,
+        this.constructs
+      ),
+      ...validateExtractionMethodology(
+        extraction,
+        methodologies,
+        registration.extractionPath!
+      ),
+    ]
+  }
+
+  public validateMethodologies(
+    registry: MethodologyRegistryDocument,
+    file: string
+  ): ProjectDiagnostic[] {
+    return duplicateIds(
+      registry.paradigms.map(paradigm => paradigm.paradigmId),
+      file
+    )
+  }
+}
+
+function duplicateExtractionIdentifiers(
+  extraction: ExtractionDocument,
+  file: string
+): ProjectDiagnostic[] {
+  const itemIds = [
+    ...itemIdentifiers(extraction.fields.researchQuestionsOrHypotheses),
+    ...itemIdentifiers(extraction.fields.theoreticalFramework),
+    ...itemIdentifiers(extraction.fields.dataCollection),
+    ...itemIdentifiers(extraction.fields.analysisMethod),
+    ...itemIdentifiers(extraction.fields.mechanisms),
+    ...itemIdentifiers(extraction.fields.moderators),
+    ...itemIdentifiers(extraction.fields.limitations),
+    ...itemIdentifiers(extraction.fields.boundaryConditions),
+    ...itemIdentifiers(extraction.fields.recommendations),
+    ...(extraction.fields.findings.items ?? []).map(item => item.findingId),
+  ]
+  return [
+    ...duplicateIds(extraction.constructMappings.map(item => item.mappingId), file),
+    ...duplicateIds(itemIds, file),
+  ]
+}
+
+function itemIdentifiers(
+  field: ExtractionDocument['fields']['researchQuestionsOrHypotheses']
+): string[] {
+  return (field.items ?? []).map(item => item.extractionItemId)
+}
+
+function validateExtractionEvidence(
+  extraction: ExtractionDocument,
+  evidence: EvidenceRecordsDocument,
+  file: string
+): ProjectDiagnostic[] {
+  const records = new Map(evidence.evidence.map(item => [item.evidenceId, item]))
+  return extractionEvidenceIds(extraction).flatMap(evidenceId => {
+    const record = records.get(evidenceId)
+    if (!record) return [referenceDiagnostic('missing-evidence-reference', file, evidenceId)]
+    if (record.paperId !== extraction.paperId) {
+      return [referenceDiagnostic('evidence-paper-mismatch', file, evidenceId)]
+    }
+    return []
+  })
+}
+
+function extractionEvidenceIds(extraction: ExtractionDocument): string[] {
+  const fieldEvidence = Object.values(extraction.fields).flatMap(value => {
+    const direct = 'evidenceIds' in value && Array.isArray(value.evidenceIds)
+      ? value.evidenceIds
+      : []
+    const items = 'items' in value && Array.isArray(value.items)
+      ? value.items.flatMap(item => item.evidenceIds)
+      : []
+    return [...direct, ...items]
+  })
+  return [...new Set([
+    ...fieldEvidence,
+    ...extraction.constructMappings.flatMap(item => item.evidenceIds),
+  ])]
+}
+
+function validateExtractionMappings(
+  extraction: ExtractionDocument,
+  taxonomy: ConstructTaxonomyDocument,
+  file: string,
+  resolver: ConstructResolver
+): ProjectDiagnostic[] {
+  const mappings = new Map(
+    extraction.constructMappings.map(item => [item.mappingId, item])
+  )
+  const diagnostics = [
+    ...(extraction.fields.keyConstructs.mappingIds ?? [])
+      .filter(mappingId => !mappings.has(mappingId))
+      .map(mappingId => referenceDiagnostic('missing-mapping-reference', file, mappingId)),
+    ...(extraction.fields.findings.items ?? [])
+      .flatMap(finding => finding.constructMappingIds)
+      .filter(mappingId => !mappings.has(mappingId))
+      .map(mappingId => referenceDiagnostic('missing-mapping-reference', file, mappingId)),
+  ]
+  for (const mapping of extraction.constructMappings) {
+    if (!mapping.constructId) continue
+    const target = taxonomy.constructs.find(
+      construct => construct.constructId === mapping.constructId
+    )
+    if (!target) {
+      diagnostics.push(referenceDiagnostic(
+        'missing-construct-reference',
+        file,
+        mapping.constructId
+      ))
+      continue
+    }
+    const resolved = resolver.resolve(taxonomy, mapping.constructId, file)
+    if (mapping.mappingStatus === 'approved') diagnostics.push(...resolved.diagnostics)
+    if (
+      mapping.mappingStatus === 'approved' &&
+      mapping.reviewState.approval.researcher !== 'approved'
+    ) {
+      diagnostics.push(referenceDiagnostic(
+        'mapping-approval-required',
+        file,
+        mapping.mappingId
+      ))
+    }
+  }
+  return diagnostics
+}
+
+function validateExtractionMethodology(
+  extraction: ExtractionDocument,
+  registry: MethodologyRegistryDocument,
+  file: string
+): ProjectDiagnostic[] {
+  const mapping = extraction.methodology.methodologicalParadigm
+  if (!mapping.paradigmId) return []
+  const paradigm = registry.paradigms.find(
+    item => item.paradigmId === mapping.paradigmId
+  )
+  if (mapping.mappingStatus !== 'approved') return []
+  if (paradigm?.status === 'approved') return []
+  return [referenceDiagnostic(
+    'paradigm-not-approved',
+    file,
+    mapping.paradigmId
+  )]
 }
 
 function buildIndexes(manifest: ProjectManifest, bundle: SynthesisBundle): ReferenceIndexes {
   return {
     papers: new Set(manifest.papers.map(paper => paper.paperId)),
-    sources: new Map(manifest.papers.map(paper => [paper.source.sourceId, paper.paperId])),
+    sources: new Map(manifest.papers.map(paper => [paper.source.sourceId, paper])),
     evidence: new Set(bundle.evidence.evidence.map(item => item.evidenceId)),
     claims: new Set(bundle.claims.claims.map(item => item.claimId)),
     gaps: new Set(bundle.gaps.gaps.map(item => item.gapId)),
@@ -107,7 +280,12 @@ function validateEvidenceRecords(
     if (!indexes.papers.has(evidence.paperId)) {
       diagnostics.push(referenceDiagnostic('missing-paper-reference', manifest.documents.evidence, evidence.evidenceId))
     }
-    if (indexes.sources.get(evidence.source.sourceId) !== evidence.paperId) {
+    const registration = indexes.sources.get(evidence.source.sourceId)
+    if (
+      registration?.paperId !== evidence.paperId ||
+      registration.source.relativePath !== evidence.source.relativePath ||
+      registration.source.sourceDocumentHash !== evidence.source.sourceDocumentHash
+    ) {
       diagnostics.push(referenceDiagnostic('source-registration-mismatch', manifest.documents.evidence, evidence.evidenceId))
     }
     return diagnostics

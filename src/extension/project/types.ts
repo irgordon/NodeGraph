@@ -1,7 +1,12 @@
 import { NodeGraph } from '../../webview/types/graph'
 
 export const APPLICATION_VERSION = '0.0.0'
-export const PROJECT_SCHEMA_VERSION = '1.0.0'
+export const LEGACY_PROJECT_SCHEMA_VERSION = '1.0.0'
+export const PROJECT_SCHEMA_VERSION = '1.1.0'
+export const DOCUMENT_SCHEMA_VERSION = '1.0.0'
+export const PAPER_INDEX_SCHEMA_VERSION = '1.1.0'
+export const EXTRACTION_SCHEMA_VERSION = '1.0.0'
+export const METHODOLOGY_SCHEMA_VERSION = '1.0.0'
 export const INDEXER_VERSION = APPLICATION_VERSION
 
 export interface SchemaHeader {
@@ -22,6 +27,7 @@ export interface PaperRegistration {
   paperId: string
   path: string
   source: SourceDocument
+  extractionPath?: string
 }
 
 export interface ProjectDocuments {
@@ -30,6 +36,7 @@ export interface ProjectDocuments {
   gaps: string
   researchQuestions: string
   constructs: string
+  methodologies?: string
   evidence: string
   paperIndex: string
   evidenceIndex: string
@@ -146,6 +153,14 @@ export interface PaperIndexEntry {
   taxonomyVersion: number
   extractorVersion: string
   indexedAt: string
+  extractionId?: string
+  extractionPath?: string
+  extractionRevision?: string
+  constructMappings?: MatrixConstructMapping[]
+  findings?: MatrixFinding[]
+  methodology?: MatrixMethodology
+  verificationSummary?: VerificationSummary
+  staleness?: MatrixStaleness
 }
 
 export interface PaperIndexDocument {
@@ -170,17 +185,40 @@ export interface EvidenceIndexDocument {
   entries: EvidenceIndexEntry[]
 }
 
+export type SourceVerification =
+  | 'pending'
+  | 'verified'
+  | 'rejected'
+  | 'stale'
+  | 'not-applicable'
+
+export type InterpretationVerification =
+  | 'pending'
+  | 'verified'
+  | 'rejected'
+  | 'not-applicable'
+
+export type ClassificationVerification =
+  | 'pending'
+  | 'verified'
+  | 'disputed'
+  | 'not-applicable'
+
+export type ResearcherApproval = 'not-reviewed' | 'approved' | 'rejected'
+export type AdvisorApproval = 'not-reviewed' | 'approved' | 'changes-requested'
+export type RecordOrigin = 'human' | 'ai' | 'imported'
+
 export interface ReviewState {
   verification: {
-    source: string
-    interpretation: string
-    classification: string
+    source: SourceVerification
+    interpretation: InterpretationVerification
+    classification: ClassificationVerification
   }
   approval: {
-    researcher: string
-    advisor: string
+    researcher: ResearcherApproval
+    advisor: AdvisorApproval
   }
-  origin: string
+  origin: RecordOrigin
 }
 
 export interface Actor {
@@ -286,6 +324,273 @@ export interface SearchResult {
   publicationYear?: number
   doi?: string
   tags: string[]
+}
+
+export type ReportingStatus =
+  | 'not-extracted'
+  | 'present'
+  | 'absent'
+  | 'not-reported'
+  | 'unclear'
+  | 'not-applicable'
+
+export type MappingStatus = 'unmapped' | 'pending' | 'approved' | 'rejected'
+
+export interface ReportedText {
+  reportingStatus: ReportingStatus
+  sourceText?: string
+  normalizedValue?: string
+  evidenceIds?: string[]
+}
+
+export interface ExtractedItem {
+  extractionItemId: string
+  sourceText: string
+  normalizedValue?: string
+  evidenceIds: string[]
+  reviewState: ReviewState
+}
+
+export interface ReportedItems {
+  reportingStatus: ReportingStatus
+  items?: ExtractedItem[]
+}
+
+export interface ExtractionFinding {
+  findingId: string
+  nodeId?: string
+  sourceText: string
+  normalizedValue?: string
+  constructMappingIds: string[]
+  evidenceIds: string[]
+  reviewState: ReviewState
+}
+
+export interface ConstructMapping {
+  mappingId: string
+  sourceTerm: string
+  constructId?: string
+  mappingStatus: MappingStatus
+  evidenceIds: string[]
+  reviewState: ReviewState
+}
+
+export interface NormalizedTerm {
+  reportingStatus: ReportingStatus
+  sourceTerm?: string
+  normalizedValue?: string
+  reviewState: ReviewState
+}
+
+export interface ParadigmMapping {
+  reportingStatus: ReportingStatus
+  sourceTerm?: string
+  paradigmId?: string
+  mappingStatus: MappingStatus
+  reviewState: ReviewState
+}
+
+export interface SampleCharacteristics {
+  reportingStatus: ReportingStatus
+  sourceText?: string
+  n?: number
+  unitOfAnalysis?: string
+  reviewState: ReviewState
+}
+
+export interface ExtractionDocument {
+  schema: SchemaHeader
+  extractionId: string
+  paperId: string
+  extractorVersion: string
+  extractionStatus: 'not-started' | 'draft' | 'proposed' | 'reviewed'
+  fields: {
+    researchProblem: ReportedText
+    purpose: ReportedText
+    researchQuestionsOrHypotheses: ReportedItems
+    theoreticalFramework: ReportedItems
+    keyConstructs: {
+      reportingStatus: ReportingStatus
+      mappingIds?: string[]
+    }
+    population: ReportedText
+    setting: ReportedText
+    sampleSize: ReportedText
+    methodology: ReportedText
+    dataCollection: ReportedItems
+    analysisMethod: ReportedItems
+    findings: {
+      reportingStatus: ReportingStatus
+      items?: ExtractionFinding[]
+    }
+    mechanisms: ReportedItems
+    moderators: ReportedItems
+    limitations: ReportedItems
+    boundaryConditions: ReportedItems
+    recommendations: ReportedItems
+    exactEvidenceQuotations: {
+      reportingStatus: ReportingStatus
+      evidenceIds: string[]
+    }
+  }
+  methodology: {
+    methodologicalParadigm: ParadigmMapping
+    researchApproach: NormalizedTerm
+    analyticalTechnique: NormalizedTerm
+    sampleCharacteristics: SampleCharacteristics
+  }
+  constructMappings: ConstructMapping[]
+  reviewState: ReviewState
+  created: string
+  modified: string
+}
+
+export interface ConstructRecord {
+  constructId: string
+  canonicalName: string
+  definition?: string
+  aliases: string[]
+  status: 'proposed' | 'approved' | 'deprecated'
+  primaryConstructId?: string
+  reviewState: ReviewState
+}
+
+export interface ConstructTaxonomyDocument {
+  schema: SchemaHeader
+  taxonomyVersion: number
+  constructs: ConstructRecord[]
+  modified: string
+}
+
+export interface ParadigmRecord {
+  paradigmId: string
+  label: string
+  aliases: string[]
+  status: 'proposed' | 'approved'
+  reviewState: ReviewState
+}
+
+export interface MethodologyRegistryDocument {
+  schema: SchemaHeader
+  registryVersion: number
+  paradigms: ParadigmRecord[]
+  modified: string
+}
+
+export interface MatrixConstructMapping {
+  mappingId: string
+  sourceTerm: string
+  constructId?: string
+  constructName?: string
+  mappingStatus: MappingStatus
+  findingIds: string[]
+  evidenceIds: string[]
+  reviewState: ReviewState
+}
+
+export interface MatrixFinding {
+  findingId: string
+  nodeId?: string
+  sourceText: string
+  constructMappingIds: string[]
+  evidenceIds: string[]
+  reviewState: ReviewState
+}
+
+export interface MatrixMethodology {
+  paradigmId?: string
+  paradigmLabel?: string
+  paradigmSourceTerm?: string
+  paradigmMappingStatus: MappingStatus
+  researchApproach?: string
+  analyticalTechnique?: string
+  population?: string
+  unitOfAnalysis?: string
+  sampleSize?: number
+}
+
+export interface VerificationSummary {
+  pendingSource: number
+  pendingInterpretation: number
+  pendingClassification: number
+  disputedClassification: number
+}
+
+export interface MatrixStaleness {
+  paperGraph: boolean
+  extraction: boolean
+  evidence: boolean
+}
+
+export interface MatrixFilters {
+  paper?: string
+  constructId?: string
+  paradigm?: string
+  approach?: string
+  technique?: string
+  population?: string
+  publicationYear?: number
+  verification?: string
+}
+
+export interface MatrixPaper {
+  paperId: string
+  title: string
+  publicationYear?: number
+  methodology: MatrixMethodology
+  verificationSummary: VerificationSummary
+  staleness: MatrixStaleness
+}
+
+export interface MatrixConstruct {
+  constructId: string
+  canonicalName: string
+}
+
+export interface MatrixCell {
+  paperId: string
+  constructId: string
+  state: 'empty' | 'unmapped' | 'pending' | 'extracted' | 'stale' | 'invalid'
+  mappingIds: string[]
+  sourceTerms: string[]
+  findingIds: string[]
+  evidenceIds: string[]
+  verification: {
+    source: SourceVerification[]
+    interpretation: InterpretationVerification[]
+    classification: ClassificationVerification[]
+  }
+}
+
+export interface MatrixSummary {
+  papers: MatrixPaper[]
+  constructs: MatrixConstruct[]
+  cells: MatrixCell[]
+  filters: MatrixFilters
+}
+
+export interface MatrixCellDetail {
+  paperId: string
+  paperPath: string
+  constructId: string
+  constructName: string
+  extractionId: string
+  extractionRevision: string
+  methodology: MatrixMethodology
+  mappings: ConstructMapping[]
+  findings: ExtractionFinding[]
+  evidence: EvidenceRecord[]
+  diagnostics: ProjectDiagnostic[]
+}
+
+export interface SourceVerificationQueueItem {
+  evidenceId: string
+  paperId: string
+  sourcePath: string
+  quote: string
+  page: number
+  state: SourceVerification
+  stale: boolean
 }
 
 export interface AuditEvent {

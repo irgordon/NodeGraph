@@ -1,0 +1,104 @@
+{
+  "schema": {
+    "name": "nodegraph-paper-index",
+    "version": "1.1.0"
+  },
+  "generatedAt": "2026-07-30T12:00:00Z",
+  "entries": [
+    {
+      "paperId": "paper_001",
+      "paperPath": "papers/paper-001.nodegraph.json",
+      "paperGraphHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "sourceDocumentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "title": "Fixture Paper One",
+      "authors": [
+        "Alex Researcher"
+      ],
+      "publicationYear": 2024,
+      "doi": "10.1000/paper-001",
+      "tags": [
+        "leadership"
+      ],
+      "taxonomyVersion": 2,
+      "extractorVersion": "0.0.0",
+      "extractionId": "extraction_001",
+      "extractionPath": "extractions/paper-001.json",
+      "extractionRevision": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "constructMappings": [
+        {
+          "mappingId": "mapping_shared_leadership",
+          "sourceTerm": "shared leadership",
+          "constructId": "construct_shared_leadership",
+          "constructName": "Shared leadership",
+          "mappingStatus": "approved",
+          "findingIds": [
+            "finding_001"
+          ],
+          "evidenceIds": [
+            "evidence_001"
+          ],
+          "reviewState": {
+            "verification": {
+              "source": "verified",
+              "interpretation": "verified",
+              "classification": "verified"
+            },
+            "approval": {
+              "researcher": "approved",
+              "advisor": "not-reviewed"
+            },
+            "origin": "human"
+          }
+        }
+      ],
+      "findings": [
+        {
+          "findingId": "finding_001",
+          "nodeId": "node_claim_04",
+          "sourceText": "Shared leadership improves trust.",
+          "constructMappingIds": [
+            "mapping_shared_leadership"
+          ],
+          "evidenceIds": [
+            "evidence_001"
+          ],
+          "reviewState": {
+            "verification": {
+              "source": "verified",
+              "interpretation": "verified",
+              "classification": "verified"
+            },
+            "approval": {
+              "researcher": "approved",
+              "advisor": "not-reviewed"
+            },
+            "origin": "human"
+          }
+        }
+      ],
+      "methodology": {
+        "paradigmId": "pragmatist",
+        "paradigmLabel": "Pragmatist",
+        "paradigmSourceTerm": "pragmatic",
+        "paradigmMappingStatus": "approved",
+        "researchApproach": "Mixed methods",
+        "analyticalTechnique": "Thematic analysis",
+        "population": "Doctoral researchers",
+        "unitOfAnalysis": "Individual researcher",
+        "sampleSize": 42
+      },
+      "verificationSummary": {
+        "pendingSource": 0,
+        "pendingInterpretation": 0,
+        "pendingClassification": 0,
+        "disputedClassification": 0
+      },
+      "staleness": {
+        "paperGraph": false,
+        "extraction": false,
+        "evidence": false
+      },
+      "indexedAt": "2026-07-30T12:00:00Z"
+    }
+  ]
+}

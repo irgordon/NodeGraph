@@ -1,0 +1,33 @@
+{
+  "schema": {
+    "name": "nodegraph-project",
+    "version": "1.1.0"
+  },
+  "projectId": "project_invalid_phase2",
+  "title": "Missing extraction registration",
+  "created": "2026-07-30T12:00:00Z",
+  "modified": "2026-07-30T12:00:00Z",
+  "papers": [
+    {
+      "paperId": "paper_001",
+      "path": "papers/paper-001.nodegraph.json",
+      "source": {
+        "sourceId": "source_001",
+        "relativePath": "pdfs/paper-001.pdf",
+        "sourceDocumentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    }
+  ],
+  "documents": {
+    "claims": "synthesis/claims.json",
+    "conflicts": "synthesis/conflicts.json",
+    "gaps": "synthesis/gaps.json",
+    "researchQuestions": "synthesis/research-questions.json",
+    "constructs": "taxonomy/constructs.json",
+    "methodologies": "taxonomy/methodologies.json",
+    "evidence": "evidence/records.json",
+    "paperIndex": "indexes/papers.index.json",
+    "evidenceIndex": "indexes/evidence.index.json",
+    "auditLog": "audit/events.jsonl"
+  }
+}

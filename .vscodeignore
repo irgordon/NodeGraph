@@ -1,3 +1,7 @@
+# Internal instructions and generated environment copies
+AGENTS.md
+.agent/ENVIRONMENT.md
+
 # Source and build tooling — not needed at runtime
 src/
 tools/
@@ -5,17 +9,36 @@ esbuild.js
 tsconfig.json
 package-lock.json
 
-# Test and temp folders
+# Tests, contract fixtures, and temporary output
 tmp/
 test/
 test-demo/
+docs/schemas/fixtures/
+coverage/
+*.log
+*.tmp
+*.bak
+*.swp
+**/.DS_Store
 
-# demo/ex5 is tracked in git and linked from the README Benchmark table,
-# but intentionally excluded from the packaged .vsix (unlike ex1-ex4)
-demo/ex5/
+# Ship the five graph JSON examples, but not source papers, generated exports,
+# paper-derived sidecar media, or per-demo environment reports.
+demo/**/*.pdf
+demo/**/*.html
+demo/**/.*-imgs/
+demo/**/.agent/
 
-# Packaged .vsix builds (kept in packages/, one per released version)
+# README-linked release media is retained; unreferenced variants and recordings
+# stay in the repository.
+resources/banner.png
+resources/icon.png
+resources/demo-ex3.mp4
+resources/demo-ex3.webp
+resources/demo-ex4.mp4
+
+# Generated VSIX builds must never be packaged recursively
 *.vsix
+**/*.vsix
 
 # Dev-only build output (sourcemaps — only emitted by non-production builds)
 dist/*.map
@@ -28,3 +51,4 @@ node_modules/
 .gitignore
 .vscode/
 .claude/
+.codex/

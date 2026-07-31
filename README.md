@@ -16,13 +16,13 @@ NodeGraph turns research PDFs into visual, source-backed notes. Use an AI agent 
 
 This fork begins a new NodeGraph application built for multi-paper research. It starts from the working NodeGraph 0.7.2 editor while beginning its own version history at 0.0.0.
 
-> **Development status:** Phase 1 is now implemented in the development branch. NodeGraph can create a local literature project, register paper graphs and PDFs, search paper metadata, check source links, rebuild indexes, and reject outdated writes. Existing `.nodegraph.json` files keep their current format and continue to open, edit, verify, and export as before. Comparison screens and later synthesis workflows are still planned.
+> **Development status:** Phase 2 is now implemented in the development branch. NodeGraph can organize paper graphs and PDFs, capture the same research and method fields for every paper, govern shared construct names, verify sources and interpretations separately, compare papers in a synthesis matrix, and export that matrix to safe CSV. Existing `.nodegraph.json` files keep their current format and continue to open, edit, verify, and export as before. Cross-paper claims, conflict analysis, gap testing, and dissertation planning are still planned.
 
 ---
 
 ## Built for Doctoral Research
 
-The workspace is designed to support doctoral-level work that examines many PDFs and analyzes the papers together. Phase 1 creates a trusted project foundation for a large reading list while keeping each paper linked to its source PDF.
+The workspace is designed to support doctoral-level work that examines many PDFs and analyzes the papers together. Phase 2 builds on the trusted project foundation with shared extraction fields, researcher-controlled terms, source review, and a paper-by-construct matrix. Each paper remains linked to its source PDF.
 
 The full product direction will help you:
 
@@ -41,14 +41,17 @@ This approach is meant for literature reviews, dissertation planning, qualifying
 
 | Available now | Planned for later phases |
 |---|---|
-| Visual editing, PDF quote checks, and HTML export for one paper | Shared comparison fields and synthesis matrix views |
-| Local projects that register many paper graphs and PDFs | Cross-paper claims and conflict review |
-| Search across indexed title, author, year, DOI, paper ID, and tags | Gap testing and research-question workflows |
-| Checks for missing files, changed PDFs, stale quotes, and broken evidence links | Researcher review screens and dissertation planning |
-| Rebuildable paper and evidence indexes | Comparison tables, outlines, and synthesis reports |
-| Safe project writes with revision checks and an audit record | A visual workflow for merging competing edits |
+| Visual editing, PDF quote checks, and HTML export for one paper | Cross-paper claims and conflict review |
+| Local projects that register many paper graphs and PDFs | Claim ledgers and evidence weighting |
+| Shared extraction fields for research, methods, populations, findings, and evidence | Gap testing and research-question workflows |
+| Researcher-controlled construct and method terms | Evidence-quality weighting and dissertation planning |
+| Source, interpretation, and classification review | Chapter outlines and later synthesis reports |
+| Lazy paper-by-construct matrix with filters and safe CSV export | Excel and document exports |
+| Checks for missing files, changed PDFs, stale quotes, and broken evidence links | Multi-document transactions and process locking |
+| Rebuildable paper, evidence, and matrix summary indexes | A visual workflow for merging competing edits |
+| Safe project writes with revision checks and an audit record | Gap testing and research-question workflows |
 
-Phase 1 provides the project structure and trust checks needed before deeper analysis is added. Later phases will add comparison views, research claims, conflict review, gap testing, research-question support, and dissertation planning.
+Phase 2 provides a consistent way to extract, normalize, verify, compare, and export paper-level findings. Later phases will add research claims, conflict review, evidence weighting, gap testing, research-question support, and dissertation planning.
 
 Read the product and technical plans:
 
@@ -90,9 +93,9 @@ Read the product and technical plans:
 
 A paper is a straight line of text, but its ideas are connected. A finding may depend on a method, a population, an earlier claim, or a limit that appears many pages later. NodeGraph makes those links visible.
 
-The single-paper editor helps you take one paper apart and verify your notes against the source. The literature project now organizes many of those graphs, searches their metadata, and checks that their source trail remains intact. Planned comparison tools will make agreements, conflicts, limits, and missing evidence visible instead of blending every paper into one summary.
+The single-paper editor helps you take one paper apart and verify your notes against the source. The literature project organizes many of those graphs, searches their metadata, checks that their source trail remains intact, and compares extracted findings in one matrix. Later analysis tools will examine agreements, conflicts, limits, and missing evidence without blending every paper into one summary.
 
-AI can speed up the work, but the researcher stays in charge. AI-created notes and links will remain suggestions until a researcher reviews them. Important conclusions will keep a clear path back to the PDFs that support them.
+AI can speed up the work, but the researcher stays in charge. AI-created extraction and classifications begin as suggestions, and only a researcher can approve shared terms. Important conclusions keep a clear path back to the PDFs that support them.
 
 ---
 
@@ -168,6 +171,8 @@ Five AI-built examples ship with the extension, so you can review a finished gra
 - `demo/ex5` — "Mental Illness Terms and Hermeneutic Hijacking"
 
 Together, they show math, tables, folded sections, and detailed question nodes. The fifth example is a philosophy paper, which shows that NodeGraph is not limited to computer science or papers with a standard methods section.
+
+The installed extension includes the five graph JSON examples. Original PDFs, generated HTML exports, and paper-derived sidecar media remain repository-only and are not included in the VSIX.
 
 **Typical agent workflow:**
 

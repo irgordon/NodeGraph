@@ -154,7 +154,12 @@ export class Phase1ProjectService {
       )
     }
     const source = await this.buildSource(projectRoot, input, read.graph)
-    return { paperId: input.paperId, path: input.paperPath, source }
+    return {
+      paperId: input.paperId,
+      path: input.paperPath,
+      source,
+      extractionPath: `extractions/${input.paperId}.json`,
+    }
   }
 
   private async readRegistrationGraph(
@@ -308,7 +313,7 @@ function paperReadError(error: unknown, file: string): Phase1ProjectError {
   )
 }
 
-function indexRebuildError(cause: unknown): Phase1ProjectError {
+export function indexRebuildError(cause: unknown): Phase1ProjectError {
   return new Phase1ProjectError(
     'index-rebuild-failed',
     'The authoritative mutation committed, but its derived indexes could not be rebuilt.',

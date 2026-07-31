@@ -1,6 +1,6 @@
 # NodeGraph — Synthesis Domain Model
 
-**Status:** v0.5 (Task 0 contract baseline)
+**Status:** v0.6 (Phase 2 extraction and matrix baseline)
 **Related documents:** `ARCHITECTURE.md` · `SYNTHESIS_WORKFLOWS.md` · `ROADMAP.md`
 
 This document owns the research concepts the synthesis layer models: evidence levels, constructs, findings, synthesis claims, conflict objects, mechanisms, context, boundary conditions, candidate gaps, research-question alignment, evidence appraisal, and methodological paradigms. It assumes the component boundaries, persistence model, and invariants defined in `ARCHITECTURE.md`.
@@ -64,6 +64,8 @@ Every paper in a literature-review project exposes a common field set, so that c
 }
 ```
 
+Each field has an explicit reporting status. `not-extracted` is the neutral initialization state for a newly registered paper. It is distinct from `not-reported`, `unclear`, `absent`, and `not-applicable`, and the matrix never interprets it as proof of absence. Repeated items, findings, construct mappings, and evidence references use stable identifiers.
+
 ## 3. Methodological Paradigm & Analytical Technique
 
 A quantitative paper reporting a structural-equation-model effect size and a qualitative phenomenological paper reporting thematic findings cannot be synthesized on the same baseline even when both address the same construct. Without explicit paradigm tagging, the matrix would silently equate incommensurable evidence types.
@@ -86,7 +88,7 @@ A quantitative paper reporting a structural-equation-model effect size and a qua
 
 The built-in paradigm registry may begin with `positivist`, `interpretive`, `critical`, and `pragmatist`, but those values are not universal or exhaustive. Project-approved additions use the same registry mechanism rather than bypassing normalization.
 
-Paradigm/approach is a visible dimension in the synthesis matrix and claim ledger, not just a filter. Cross-paradigm synthesis claims are flagged for researcher review rather than merged automatically (Core Invariant 12, `ARCHITECTURE.md` §4).
+Paradigm/approach is a visible dimension and filter in the Phase 2 synthesis matrix. It is planned as a claim-ledger dimension in Phase 3. Cross-paradigm synthesis claims are flagged for researcher review rather than merged automatically (Core Invariant 12, `ARCHITECTURE.md` §4).
 
 ## 4. Construct Registry (Taxonomy)
 
@@ -120,21 +122,25 @@ Unapproved proposed constructs sit in a pending-merge queue; they are never sile
 
 Objects that referenced Construct B remain valid and resolve B → A through `primaryConstructId`; they are not rewritten to A. `ConstructResolver` rejects missing targets, self-references, deprecated-to-deprecated chains, and primaries that are not `approved`.
 
+Only an active, researcher-approved construct can be the source of a merge. Its former canonical term and aliases are normalized and deduplicated into the approved primary's textual aliases. The taxonomy version increments once, and the audit event records both construct IDs.
+
 ## 5. Synthesis Matrix
 
 The primary comparison interface. Not another large graph.
 
-| Paper | Shared leadership | Trust | Accountability | Military context | Mixed workforce |
-|---|---|---|---|---|---|
-| Smith 2024 | Supports | Supports | Not examined | Yes | No |
-| Jones 2025 | Mixed | Supports | Concern raised | No | Yes |
-| Lee 2023 | Supports | Not examined | Supports | Yes | Yes |
+| Paper | Shared leadership | Trust | Pending / unmapped |
+|---|---|---|---|
+| Smith 2024 | 2 findings · source verified | No extracted data | — |
+| Jones 2025 | 1 finding · interpretation pending | 1 finding · classification disputed | — |
+| Lee 2023 | No extracted data | — | “distributed team influence” |
 
-Clicking a cell opens: the paper-level finding, supporting quotations, method and population, confidence/verification status, analyst notes.
+Clicking a cell opens the paper-level finding, supporting quotations, method and population, source and normalized terms, and independent verification status.
 
-**Modes:** constructs × papers · findings × populations · methods × outcomes · theories × contexts · research questions × supporting evidence · themes × publication year.
+Phase 2 implements papers × approved constructs plus one visible pending/unmapped column when needed. Filtering covers paper, construct, paradigm, approach, analytical technique, population, year, and verification state. Research-question, claim, conflict, and evidence-quality modes remain planned for later phases.
 
 **Sync requirement:** selecting a matrix cell focuses the corresponding evidence nodes in the graph view, and vice versa. The matrix renders from the lazy-loaded summary index defined in `ARCHITECTURE.md` §9, not from fully hydrated paper graphs.
+
+**Rule:** Phase 2 matrix cells expose extraction content and review state. They never assign `supports`, `contradicts`, or another Phase 3 relationship.
 
 ## 6. Agreement and Conflict Objects
 
@@ -221,7 +227,7 @@ Population coverage distinguishes absence from missing or ambiguous reporting:
 }
 ```
 
-Allowed statuses are `present`, `absent`, `not-reported`, `unclear`, and `not-applicable`. A missing extraction value must not be converted automatically into an absent population.
+Allowed analytical statuses are `present`, `absent`, `not-reported`, `unclear`, and `not-applicable`. Phase 2 also uses `not-extracted` as an internal initialization state. A missing or not-yet-extracted value must not be converted automatically into an absent population.
 
 **Rule:** these are **candidate gaps**, never **confirmed gaps**. A candidate gap is not usable in Chapter 1/2 until it has an adversarial-pass record (`SYNTHESIS_WORKFLOWS.md` §7).
 

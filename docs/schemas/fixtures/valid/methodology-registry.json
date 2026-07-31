@@ -1,0 +1,82 @@
+{
+  "schema": {
+    "name": "nodegraph-methodology-registry",
+    "version": "1.0.0"
+  },
+  "registryVersion": 1,
+  "paradigms": [
+    {
+      "paradigmId": "positivist",
+      "label": "Positivist",
+      "aliases": [],
+      "status": "approved",
+      "reviewState": {
+        "verification": {
+          "source": "not-applicable",
+          "interpretation": "not-applicable",
+          "classification": "verified"
+        },
+        "approval": {
+          "researcher": "approved",
+          "advisor": "not-reviewed"
+        },
+        "origin": "imported"
+      }
+    },
+    {
+      "paradigmId": "interpretive",
+      "label": "Interpretive",
+      "aliases": [],
+      "status": "approved",
+      "reviewState": {
+        "verification": {
+          "source": "not-applicable",
+          "interpretation": "not-applicable",
+          "classification": "verified"
+        },
+        "approval": {
+          "researcher": "approved",
+          "advisor": "not-reviewed"
+        },
+        "origin": "imported"
+      }
+    },
+    {
+      "paradigmId": "critical",
+      "label": "Critical",
+      "aliases": [],
+      "status": "approved",
+      "reviewState": {
+        "verification": {
+          "source": "not-applicable",
+          "interpretation": "not-applicable",
+          "classification": "verified"
+        },
+        "approval": {
+          "researcher": "approved",
+          "advisor": "not-reviewed"
+        },
+        "origin": "imported"
+      }
+    },
+    {
+      "paradigmId": "pragmatist",
+      "label": "Pragmatist",
+      "aliases": [],
+      "status": "approved",
+      "reviewState": {
+        "verification": {
+          "source": "not-applicable",
+          "interpretation": "not-applicable",
+          "classification": "verified"
+        },
+        "approval": {
+          "researcher": "approved",
+          "advisor": "not-reviewed"
+        },
+        "origin": "imported"
+      }
+    }
+  ],
+  "modified": "2026-07-30T12:00:00Z"
+}

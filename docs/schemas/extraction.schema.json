@@ -1,0 +1,643 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Jeong-jin-Han/NodeGraph/main/docs/schemas/extraction.schema.json",
+  "title": "NodeGraph Standardized Paper Extraction",
+  "description": "Authoritative Phase 2 extraction for one registered paper.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "extractionId",
+    "paperId",
+    "extractorVersion",
+    "extractionStatus",
+    "fields",
+    "methodology",
+    "constructMappings",
+    "reviewState",
+    "created",
+    "modified"
+  ],
+  "properties": {
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "const": "nodegraph-extraction"
+        },
+        "version": {
+          "const": "1.0.0"
+        }
+      }
+    },
+    "extractionId": {
+      "type": "string",
+      "pattern": "^extraction_[A-Za-z0-9_-]+$"
+    },
+    "paperId": {
+      "$ref": "common.schema.json#/definitions/paperId"
+    },
+    "extractorVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "extractionStatus": {
+      "enum": [
+        "not-started",
+        "draft",
+        "proposed",
+        "reviewed"
+      ]
+    },
+    "fields": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "researchProblem",
+        "purpose",
+        "researchQuestionsOrHypotheses",
+        "theoreticalFramework",
+        "keyConstructs",
+        "population",
+        "setting",
+        "sampleSize",
+        "methodology",
+        "dataCollection",
+        "analysisMethod",
+        "findings",
+        "mechanisms",
+        "moderators",
+        "limitations",
+        "boundaryConditions",
+        "recommendations",
+        "exactEvidenceQuotations"
+      ],
+      "properties": {
+        "researchProblem": {
+          "$ref": "#/definitions/reportedText"
+        },
+        "purpose": {
+          "$ref": "#/definitions/reportedText"
+        },
+        "researchQuestionsOrHypotheses": {
+          "$ref": "#/definitions/reportedItems"
+        },
+        "theoreticalFramework": {
+          "$ref": "#/definitions/reportedItems"
+        },
+        "keyConstructs": {
+          "$ref": "#/definitions/reportedConstructs"
+        },
+        "population": {
+          "$ref": "#/definitions/reportedText"
+        },
+        "setting": {
+          "$ref": "#/definitions/reportedText"
+        },
+        "sampleSize": {
+          "$ref": "#/definitions/reportedText"
+        },
+        "methodology": {
+          "$ref": "#/definitions/reportedText"
+        },
+        "dataCollection": {
+          "$ref": "#/definitions/reportedItems"
+        },
+        "analysisMethod": {
+          "$ref": "#/definitions/reportedItems"
+        },
+        "findings": {
+          "$ref": "#/definitions/reportedFindings"
+        },
+        "mechanisms": {
+          "$ref": "#/definitions/reportedItems"
+        },
+        "moderators": {
+          "$ref": "#/definitions/reportedItems"
+        },
+        "limitations": {
+          "$ref": "#/definitions/reportedItems"
+        },
+        "boundaryConditions": {
+          "$ref": "#/definitions/reportedItems"
+        },
+        "recommendations": {
+          "$ref": "#/definitions/reportedItems"
+        },
+        "exactEvidenceQuotations": {
+          "$ref": "#/definitions/reportedEvidence"
+        }
+      }
+    },
+    "methodology": {
+      "$ref": "#/definitions/methodology"
+    },
+    "constructMappings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/constructMapping"
+      }
+    },
+    "reviewState": {
+      "$ref": "common.schema.json#/definitions/reviewState"
+    },
+    "created": {
+      "$ref": "common.schema.json#/definitions/timestamp"
+    },
+    "modified": {
+      "$ref": "common.schema.json#/definitions/timestamp"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "reviewState": {
+            "properties": {
+              "origin": {
+                "const": "ai"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "extractionStatus": {
+            "const": "proposed"
+          },
+          "reviewState": {
+            "properties": {
+              "approval": {
+                "properties": {
+                  "researcher": {
+                    "const": "not-reviewed"
+                  },
+                  "advisor": {
+                    "const": "not-reviewed"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "reportingStatus": {
+      "enum": [
+        "not-extracted",
+        "present",
+        "absent",
+        "not-reported",
+        "unclear",
+        "not-applicable"
+      ]
+    },
+    "evidenceIds": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/definitions/evidenceId"
+      }
+    },
+    "reportedText": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reportingStatus"
+      ],
+      "properties": {
+        "reportingStatus": {
+          "$ref": "#/definitions/reportingStatus"
+        },
+        "sourceText": {
+          "type": "string",
+          "minLength": 1
+        },
+        "normalizedValue": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidenceIds": {
+          "$ref": "#/definitions/evidenceIds"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "reportingStatus": {
+                "const": "present"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "sourceText"
+            ]
+          }
+        }
+      ]
+    },
+    "extractedItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "extractionItemId",
+        "sourceText",
+        "evidenceIds",
+        "reviewState"
+      ],
+      "properties": {
+        "extractionItemId": {
+          "type": "string",
+          "pattern": "^item_[A-Za-z0-9_-]+$"
+        },
+        "sourceText": {
+          "type": "string",
+          "minLength": 1
+        },
+        "normalizedValue": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidenceIds": {
+          "$ref": "#/definitions/evidenceIds"
+        },
+        "reviewState": {
+          "$ref": "common.schema.json#/definitions/reviewState"
+        }
+      }
+    },
+    "reportedItems": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reportingStatus"
+      ],
+      "properties": {
+        "reportingStatus": {
+          "$ref": "#/definitions/reportingStatus"
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/extractedItem"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "reportingStatus": {
+                "const": "present"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "items"
+            ]
+          }
+        }
+      ]
+    },
+    "reportedConstructs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reportingStatus"
+      ],
+      "properties": {
+        "reportingStatus": {
+          "$ref": "#/definitions/reportingStatus"
+        },
+        "mappingIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^mapping_[A-Za-z0-9_-]+$"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "reportingStatus": {
+                "const": "present"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "mappingIds"
+            ]
+          }
+        }
+      ]
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "findingId",
+        "sourceText",
+        "constructMappingIds",
+        "evidenceIds",
+        "reviewState"
+      ],
+      "properties": {
+        "findingId": {
+          "type": "string",
+          "pattern": "^finding_[A-Za-z0-9_-]+$"
+        },
+        "nodeId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceText": {
+          "type": "string",
+          "minLength": 1
+        },
+        "normalizedValue": {
+          "type": "string",
+          "minLength": 1
+        },
+        "constructMappingIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^mapping_[A-Za-z0-9_-]+$"
+          }
+        },
+        "evidenceIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "common.schema.json#/definitions/evidenceId"
+          }
+        },
+        "reviewState": {
+          "$ref": "common.schema.json#/definitions/reviewState"
+        }
+      }
+    },
+    "reportedFindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reportingStatus"
+      ],
+      "properties": {
+        "reportingStatus": {
+          "$ref": "#/definitions/reportingStatus"
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/finding"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "reportingStatus": {
+                "const": "present"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "items"
+            ]
+          }
+        }
+      ]
+    },
+    "reportedEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reportingStatus",
+        "evidenceIds"
+      ],
+      "properties": {
+        "reportingStatus": {
+          "$ref": "#/definitions/reportingStatus"
+        },
+        "evidenceIds": {
+          "$ref": "#/definitions/evidenceIds"
+        }
+      }
+    },
+    "normalizedTerm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reportingStatus",
+        "reviewState"
+      ],
+      "properties": {
+        "reportingStatus": {
+          "$ref": "#/definitions/reportingStatus"
+        },
+        "sourceTerm": {
+          "type": "string",
+          "minLength": 1
+        },
+        "normalizedValue": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewState": {
+          "$ref": "common.schema.json#/definitions/reviewState"
+        }
+      }
+    },
+    "paradigmMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reportingStatus",
+        "mappingStatus",
+        "reviewState"
+      ],
+      "properties": {
+        "reportingStatus": {
+          "$ref": "#/definitions/reportingStatus"
+        },
+        "sourceTerm": {
+          "type": "string",
+          "minLength": 1
+        },
+        "paradigmId": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "mappingStatus": {
+          "enum": [
+            "unmapped",
+            "pending",
+            "approved",
+            "rejected"
+          ]
+        },
+        "reviewState": {
+          "$ref": "common.schema.json#/definitions/reviewState"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mappingStatus": {
+                "const": "approved"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "paradigmId"
+            ]
+          }
+        }
+      ]
+    },
+    "sampleCharacteristics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reportingStatus",
+        "reviewState"
+      ],
+      "properties": {
+        "reportingStatus": {
+          "$ref": "#/definitions/reportingStatus"
+        },
+        "sourceText": {
+          "type": "string",
+          "minLength": 1
+        },
+        "n": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unitOfAnalysis": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewState": {
+          "$ref": "common.schema.json#/definitions/reviewState"
+        }
+      }
+    },
+    "methodology": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "methodologicalParadigm",
+        "researchApproach",
+        "analyticalTechnique",
+        "sampleCharacteristics"
+      ],
+      "properties": {
+        "methodologicalParadigm": {
+          "$ref": "#/definitions/paradigmMapping"
+        },
+        "researchApproach": {
+          "$ref": "#/definitions/normalizedTerm"
+        },
+        "analyticalTechnique": {
+          "$ref": "#/definitions/normalizedTerm"
+        },
+        "sampleCharacteristics": {
+          "$ref": "#/definitions/sampleCharacteristics"
+        }
+      }
+    },
+    "constructMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mappingId",
+        "sourceTerm",
+        "mappingStatus",
+        "evidenceIds",
+        "reviewState"
+      ],
+      "properties": {
+        "mappingId": {
+          "type": "string",
+          "pattern": "^mapping_[A-Za-z0-9_-]+$"
+        },
+        "sourceTerm": {
+          "type": "string",
+          "minLength": 1
+        },
+        "constructId": {
+          "$ref": "common.schema.json#/definitions/constructId"
+        },
+        "mappingStatus": {
+          "enum": [
+            "unmapped",
+            "pending",
+            "approved",
+            "rejected"
+          ]
+        },
+        "evidenceIds": {
+          "$ref": "#/definitions/evidenceIds"
+        },
+        "reviewState": {
+          "$ref": "common.schema.json#/definitions/reviewState"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mappingStatus": {
+                "const": "approved"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "constructId"
+            ],
+            "properties": {
+              "reviewState": {
+                "properties": {
+                  "approval": {
+                    "properties": {
+                      "researcher": {
+                        "const": "approved"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

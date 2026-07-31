@@ -1,8 +1,13 @@
 import { AtomicJsonWriter } from './AtomicJsonWriter'
 import { AuditLog } from './AuditLog'
+import { calculateDocumentRevision } from './canonical'
 import { diagnostic, hasErrors } from './diagnostics'
 import { isFileError } from './documentIO'
-import { INDEXER_VERSION, PROJECT_SCHEMA_VERSION } from './types'
+import {
+  DOCUMENT_SCHEMA_VERSION,
+  INDEXER_VERSION,
+  PAPER_INDEX_SCHEMA_VERSION,
+} from './types'
 import { IntegrityService } from './IntegrityService'
 import { PaperGraphRepository } from './PaperGraphRepository'
 import { ProjectPathError, ProjectPathResolver } from './ProjectPathResolver'
@@ -10,14 +15,21 @@ import { SchemaValidator } from './SchemaValidator'
 import { SynthesisRepository } from './SynthesisRepository'
 import {
   Clock,
+  ConstructTaxonomyDocument,
   EvidenceIndexDocument,
   EvidenceRecord,
+  ExtractionDocument,
   IndexBuildResult,
+  MethodologyRegistryDocument,
+  MatrixConstructMapping,
+  MatrixFinding,
+  MatrixMethodology,
   PaperIndexDocument,
   PaperIndexEntry,
   PaperRegistration,
   ProjectDiagnostic,
   ProjectManifest,
+  ReviewState,
   systemClock,
 } from './types'
 
@@ -46,7 +58,8 @@ export class IndexBuilder {
       manifest,
       inputs.paperIndex,
       inputs.evidence,
-      inputs.taxonomyVersion,
+      inputs.taxonomy,
+      inputs.methodologies,
       now,
       full,
       diagnostics
@@ -63,26 +76,30 @@ export class IndexBuilder {
   ): Promise<{
     paperIndex?: PaperIndexDocument
     evidence: EvidenceRecord[]
-    taxonomyVersion: number
+    taxonomy?: ConstructTaxonomyDocument
+    methodologies?: MethodologyRegistryDocument
     diagnostics: ProjectDiagnostic[]
   }> {
     const paperIndex = await this.synthesis.readDocument<PaperIndexDocument>(
       projectRoot,
       manifest.documents.paperIndex,
-      'paper-index.schema.json'
+      'paper-index-v1.1.schema.json'
     )
     const evidence = await this.synthesis.readEvidence(projectRoot, manifest)
     const taxonomy = await this.synthesis.readTaxonomy(projectRoot, manifest)
+    const methodologies = await this.synthesis.readMethodologies(projectRoot, manifest)
     return {
       ...(paperIndex.value ? { paperIndex: paperIndex.value } : {}),
       evidence: evidence.value?.evidence ?? [],
-      taxonomyVersion: taxonomy.value?.taxonomyVersion ?? 1,
+      ...(taxonomy.value ? { taxonomy: taxonomy.value } : {}),
+      ...(methodologies.value ? { methodologies: methodologies.value } : {}),
       diagnostics: [
         ...paperIndex.diagnostics
           .filter(item => item.code !== 'missing-file')
           .map(asRecoverableIndexDiagnostic),
         ...evidence.diagnostics,
         ...taxonomy.diagnostics,
+        ...methodologies.diagnostics,
       ],
     }
   }
@@ -92,7 +109,8 @@ export class IndexBuilder {
     manifest: ProjectManifest,
     currentIndex: PaperIndexDocument | undefined,
     evidence: EvidenceRecord[],
-    taxonomyVersion: number,
+    taxonomy: ConstructTaxonomyDocument | undefined,
+    methodologies: MethodologyRegistryDocument | undefined,
     now: string,
     full: boolean,
     diagnostics: ProjectDiagnostic[]
@@ -101,12 +119,14 @@ export class IndexBuilder {
     const build = createPaperBuild(currentEntries, manifest)
     const context = {
       evidence,
-      taxonomyVersion,
+      taxonomy,
+      methodologies,
       now,
       full,
       build,
       diagnostics,
       auditPath: manifest.documents.auditLog,
+      manifest,
     }
     for (const registration of manifest.papers) {
       await this.addPaperEntry(
@@ -125,14 +145,35 @@ export class IndexBuilder {
     current: PaperIndexEntry | undefined,
     context: PaperBuildContext
   ): Promise<void> {
+    if (!context.taxonomy || !context.methodologies) return
+    const extraction = await this.synthesis.readExtraction(projectRoot, registration)
+    context.diagnostics.push(...extraction.diagnostics)
+    if (!extraction.value) return
+    const extractionDiagnostics = await this.synthesis.validateExtraction(
+      projectRoot,
+      context.manifest,
+      registration,
+      extraction.value
+    )
+    context.diagnostics.push(...extractionDiagnostics)
+    if (hasErrors(extractionDiagnostics)) return
+    const extractionRevision = calculateDocumentRevision(extraction.value)
     const graphHash = await this.calculateGraphHash(projectRoot, registration)
     context.diagnostics.push(...graphHash.diagnostics)
     if (!graphHash.value) return
-    const sourceHash = await this.inspectSourceIdentity(projectRoot, registration, context)
+    const source = await this.inspectSourceIdentity(projectRoot, registration, context)
     if (
       !context.full &&
       current &&
-      canReuse(current, registration, graphHash.value, context.taxonomyVersion)
+      canReuse(
+        current,
+        registration,
+        graphHash.value,
+        source.currentHash,
+        extractionRevision,
+        extraction.value,
+        context.taxonomy.taxonomyVersion
+      )
     ) {
       reusePaperEntry(context.build, current)
       return
@@ -141,7 +182,10 @@ export class IndexBuilder {
       projectRoot,
       registration,
       graphHash.value,
-      sourceHash,
+      source.currentHash,
+      source.diagnostics,
+      extraction.value,
+      extractionRevision,
       context
     )
   }
@@ -150,11 +194,14 @@ export class IndexBuilder {
     projectRoot: string,
     registration: PaperRegistration,
     context: PaperBuildContext
-  ): Promise<string | undefined> {
+  ): Promise<{
+    currentHash?: string
+    diagnostics: ProjectDiagnostic[]
+  }> {
     const source = await this.integrity.inspectSource(projectRoot, registration)
     context.diagnostics.push(...source.diagnostics)
     await this.recordSourceChange(projectRoot, registration, source.currentHash, context.auditPath)
-    return source.currentHash
+    return source
   }
 
   private async rebuildPaperEntry(
@@ -162,6 +209,9 @@ export class IndexBuilder {
     registration: PaperRegistration,
     graphHash: string,
     currentSourceHash: string | undefined,
+    sourceDiagnostics: ProjectDiagnostic[],
+    extraction: ExtractionDocument,
+    extractionRevision: string,
     context: PaperBuildContext
   ): Promise<void> {
     const paperEvidence = context.evidence.filter(item => item.paperId === registration.paperId)
@@ -176,13 +226,23 @@ export class IndexBuilder {
     )
     context.diagnostics.push(...inspected.diagnostics)
     if (!inspected.graph || hasErrors(inspected.diagnostics)) return
-    context.build.entries.push(this.papers.buildIndexMetadata(
+    const metadata = this.papers.buildIndexMetadata(
       registration,
       inspected.graph,
       graphHash,
-      context.taxonomyVersion,
+      context.taxonomy!.taxonomyVersion,
       context.now,
-      INDEXER_VERSION
+      extraction.extractorVersion
+    )
+    context.build.entries.push(buildPhase2Entry(
+      metadata,
+      registration.extractionPath!,
+      extraction,
+      extractionRevision,
+      context.taxonomy!,
+      context.methodologies!,
+      paperEvidence,
+      [...sourceDiagnostics, ...inspected.diagnostics]
     ))
     context.build.processed.push(registration.paperId)
   }
@@ -236,7 +296,7 @@ export class IndexBuilder {
     evidenceIndex: EvidenceIndexDocument
   ): ProjectDiagnostic[] {
     return [
-      ...this.schemas.validate('paper-index.schema.json', paperIndex, manifest.documents.paperIndex),
+      ...this.schemas.validate('paper-index-v1.1.schema.json', paperIndex, manifest.documents.paperIndex),
       ...this.schemas.validate('evidence-index.schema.json', evidenceIndex, manifest.documents.evidenceIndex),
     ]
   }
@@ -284,12 +344,14 @@ interface PaperBuild {
 
 interface PaperBuildContext {
   evidence: EvidenceRecord[]
-  taxonomyVersion: number
+  taxonomy?: ConstructTaxonomyDocument
+  methodologies?: MethodologyRegistryDocument
   now: string
   full: boolean
   build: PaperBuild
   diagnostics: ProjectDiagnostic[]
   auditPath: string
+  manifest: ProjectManifest
 }
 
 interface IndexDocuments {
@@ -314,18 +376,186 @@ function canReuse(
   current: PaperIndexEntry,
   registration: PaperRegistration,
   graphHash: string,
+  currentSourceHash: string | undefined,
+  extractionRevision: string,
+  extraction: ExtractionDocument,
   taxonomyVersion: number
 ): boolean {
   return current.paperGraphHash === graphHash &&
     current.paperPath === registration.path &&
+    currentSourceHash === registration.source.sourceDocumentHash &&
     current.sourceDocumentHash === registration.source.sourceDocumentHash &&
+    current.extractionPath === registration.extractionPath &&
+    current.extractionRevision === extractionRevision &&
     current.taxonomyVersion === taxonomyVersion &&
-    current.extractorVersion === INDEXER_VERSION
+    current.extractorVersion === extraction.extractorVersion
 }
 
 function reusePaperEntry(build: PaperBuild, current: PaperIndexEntry): void {
   build.entries.push(current)
   build.reused.push(current.paperId)
+}
+
+function buildPhase2Entry(
+  metadata: PaperIndexEntry,
+  extractionPath: string,
+  extraction: ExtractionDocument,
+  extractionRevision: string,
+  taxonomy: ConstructTaxonomyDocument,
+  methodologies: MethodologyRegistryDocument,
+  evidence: EvidenceRecord[],
+  diagnostics: ProjectDiagnostic[]
+): PaperIndexEntry {
+  const findings = buildMatrixFindings(extraction)
+  return {
+    ...metadata,
+    extractionId: extraction.extractionId,
+    extractionPath,
+    extractionRevision,
+    constructMappings: buildMatrixMappings(extraction, taxonomy, findings),
+    findings,
+    methodology: buildMatrixMethodology(extraction, methodologies),
+    verificationSummary: buildVerificationSummary(extraction, evidence),
+    staleness: {
+      paperGraph: false,
+      extraction: false,
+      evidence: diagnostics.some(item =>
+        item.code.startsWith('stale-') ||
+        item.code === 'source-document-hash-mismatch'
+      ),
+    },
+  }
+}
+
+function buildMatrixFindings(extraction: ExtractionDocument): MatrixFinding[] {
+  return (extraction.fields.findings.items ?? []).map(finding => ({
+    findingId: finding.findingId,
+    ...(finding.nodeId ? { nodeId: finding.nodeId } : {}),
+    sourceText: finding.sourceText,
+    constructMappingIds: [...finding.constructMappingIds],
+    evidenceIds: [...finding.evidenceIds],
+    reviewState: finding.reviewState,
+  }))
+}
+
+function buildMatrixMappings(
+  extraction: ExtractionDocument,
+  taxonomy: ConstructTaxonomyDocument,
+  findings: MatrixFinding[]
+): MatrixConstructMapping[] {
+  return extraction.constructMappings.map(mapping => {
+    const construct = mapping.constructId
+      ? resolveConstructRecord(taxonomy, mapping.constructId)
+      : undefined
+    return {
+      mappingId: mapping.mappingId,
+      sourceTerm: mapping.sourceTerm,
+      ...(mapping.constructId ? { constructId: mapping.constructId } : {}),
+      ...(mapping.mappingStatus === 'approved' && construct
+        ? {
+          constructId: construct.constructId,
+          constructName: construct.canonicalName,
+        }
+        : {}),
+      mappingStatus: mapping.mappingStatus,
+      findingIds: findings
+        .filter(finding => finding.constructMappingIds.includes(mapping.mappingId))
+        .map(finding => finding.findingId),
+      evidenceIds: [...mapping.evidenceIds],
+      reviewState: mapping.reviewState,
+    }
+  })
+}
+
+function resolveConstructRecord(
+  taxonomy: ConstructTaxonomyDocument,
+  constructId: string
+) {
+  const construct = taxonomy.constructs.find(item => item.constructId === constructId)
+  if (construct?.status === 'approved') return construct
+  if (construct?.status !== 'deprecated' || !construct.primaryConstructId) return undefined
+  const primary = taxonomy.constructs.find(
+    item => item.constructId === construct.primaryConstructId
+  )
+  return primary?.status === 'approved' ? primary : undefined
+}
+
+function buildMatrixMethodology(
+  extraction: ExtractionDocument,
+  registry: MethodologyRegistryDocument
+): MatrixMethodology {
+  const paradigm = extraction.methodology.methodologicalParadigm
+  const approved = paradigm.mappingStatus === 'approved'
+    ? registry.paradigms.find(
+      item => item.paradigmId === paradigm.paradigmId && item.status === 'approved'
+    )
+    : undefined
+  const sample = extraction.methodology.sampleCharacteristics
+  return {
+    ...(approved ? {
+      paradigmId: approved.paradigmId,
+      paradigmLabel: approved.label,
+    } : {}),
+    ...(paradigm.sourceTerm ? { paradigmSourceTerm: paradigm.sourceTerm } : {}),
+    paradigmMappingStatus: paradigm.mappingStatus,
+    ...normalizedSummary(
+      'researchApproach',
+      extraction.methodology.researchApproach
+    ),
+    ...normalizedSummary(
+      'analyticalTechnique',
+      extraction.methodology.analyticalTechnique
+    ),
+    ...reportedSummary('population', extraction.fields.population),
+    ...(sample.unitOfAnalysis ? { unitOfAnalysis: sample.unitOfAnalysis } : {}),
+    ...(sample.n !== undefined ? { sampleSize: sample.n } : {}),
+  }
+}
+
+function normalizedSummary(
+  key: 'researchApproach' | 'analyticalTechnique',
+  value: { normalizedValue?: string; sourceTerm?: string }
+): Partial<MatrixMethodology> {
+  const summary = value.normalizedValue ?? value.sourceTerm
+  return summary ? { [key]: summary } : {}
+}
+
+function reportedSummary(
+  key: 'population',
+  value: { normalizedValue?: string; sourceText?: string }
+): Partial<MatrixMethodology> {
+  const summary = value.normalizedValue ?? value.sourceText
+  return summary ? { [key]: summary } : {}
+}
+
+function buildVerificationSummary(
+  extraction: ExtractionDocument,
+  evidence: EvidenceRecord[]
+) {
+  const states: ReviewState[] = [
+    ...(extraction.fields.findings.items ?? []).map(item => item.reviewState),
+    ...extraction.constructMappings.map(item => item.reviewState),
+  ]
+  const referenced = new Set([
+    ...extraction.fields.exactEvidenceQuotations.evidenceIds,
+    ...(extraction.fields.findings.items ?? []).flatMap(item => item.evidenceIds),
+    ...extraction.constructMappings.flatMap(item => item.evidenceIds),
+  ])
+  return {
+    pendingSource: evidence.filter(record =>
+      referenced.has(record.evidenceId) &&
+      record.reviewState.verification.source === 'pending'
+    ).length,
+    pendingInterpretation: states.filter(
+      state => state.verification.interpretation === 'pending'
+    ).length,
+    pendingClassification: states.filter(
+      state => state.verification.classification === 'pending'
+    ).length,
+    disputedClassification: states.filter(
+      state => state.verification.classification === 'disputed'
+    ).length,
+  }
 }
 
 function paperReadDiagnostic(
@@ -356,7 +586,7 @@ function asRecoverableIndexDiagnostic(item: ProjectDiagnostic): ProjectDiagnosti
 
 function buildPaperIndex(entries: PaperIndexEntry[], now: string): PaperIndexDocument {
   return {
-    schema: { name: 'nodegraph-paper-index', version: PROJECT_SCHEMA_VERSION },
+    schema: { name: 'nodegraph-paper-index', version: PAPER_INDEX_SCHEMA_VERSION },
     generatedAt: now,
     entries: [...entries].sort((left, right) => left.paperId.localeCompare(right.paperId)),
   }
@@ -393,7 +623,7 @@ export function buildEvidenceIndex(
   now: string
 ): EvidenceIndexDocument {
   return {
-    schema: { name: 'nodegraph-evidence-index', version: PROJECT_SCHEMA_VERSION },
+    schema: { name: 'nodegraph-evidence-index', version: DOCUMENT_SCHEMA_VERSION },
     generatedAt: now,
     entries: evidence
       .map(record => buildEvidenceEntry(record, now))

@@ -1,18 +1,12 @@
 import { diagnostic } from './diagnostics'
-import { ProjectDiagnostic } from './types'
+import { normalizeMetadataSearch } from './metadata'
+import {
+  ConstructRecord,
+  ConstructTaxonomyDocument,
+  ProjectDiagnostic,
+} from './types'
 
-export interface ConstructRecord {
-  constructId: string
-  status: 'proposed' | 'approved' | 'deprecated'
-  primaryConstructId?: string
-}
-
-export interface ConstructTaxonomyDocument {
-  schema: { name: string; version: string }
-  taxonomyVersion: number
-  constructs: ConstructRecord[]
-  modified: string
-}
+export type { ConstructTaxonomyDocument } from './types'
 
 export class ConstructResolver {
   public resolve(
@@ -27,6 +21,22 @@ export class ConstructResolver {
       return { diagnostics: [constructDiagnostic('construct-not-approved', constructId, file)] }
     }
     return this.resolveDeprecated(taxonomy, construct, file)
+  }
+
+  public resolveTerm(
+    taxonomy: ConstructTaxonomyDocument,
+    sourceTerm: string,
+    file: string
+  ): { constructId?: string; diagnostics: ProjectDiagnostic[] } {
+    const normalized = normalizeMetadataSearch(sourceTerm)
+    const matches = taxonomy.constructs.filter(construct =>
+      construct.status === 'approved' &&
+      [construct.canonicalName, ...construct.aliases]
+        .some(value => normalizeMetadataSearch(value) === normalized)
+    )
+    if (matches.length === 1) return { constructId: matches[0].constructId, diagnostics: [] }
+    const code = matches.length ? 'ambiguous-construct-alias' : 'construct-alias-not-found'
+    return { diagnostics: [constructDiagnostic(code, sourceTerm, file)] }
   }
 
   private resolveDeprecated(

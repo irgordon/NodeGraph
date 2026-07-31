@@ -1,6 +1,6 @@
 # NodeGraph — Architecture
 
-**Status:** Phase 1 development baseline (application 0.0.0)
+**Status:** Phase 2 implemented baseline (application 0.0.0)
 **Related documents:** `SYNTHESIS_DOMAIN_MODEL.md` · `SYNTHESIS_WORKFLOWS.md` · `ROADMAP.md`
 
 This document is the stable technical contract for the NodeGraph synthesis extension. It defines system boundaries, component ownership, persistence, provenance, validation, and scale — the decisions that must hold regardless of which features are built on top of them. Feature requirements, domain rules, and sequencing live in the related documents above.
@@ -38,7 +38,10 @@ NodeGraph 0.7.2 already provides much of the Level 1–2 foundation, including p
 | Layered validation and `IntegrityService` | Implemented in Phase 1 |
 | Disposable indexes, partial rebuilds, and metadata search | Implemented in Phase 1 |
 | Per-document revisions, atomic writes, and audit events | Implemented in Phase 1 |
-| Synthesis UI and synthesis exports | Planned for later phases; intentionally absent |
+| Standardized extraction and methodological classification | Implemented in Phase 2 |
+| Governed construct taxonomy and independent verification | Implemented in Phase 2 |
+| Lazy synthesis matrix and CSV matrix export | Implemented in Phase 2 |
+| Claims, conflicts, gaps, and dissertation planning | Planned for Phases 3–5 |
 
 Later-phase components in this document remain designs until the implementation-status table marks them as available.
 
@@ -47,14 +50,14 @@ Later-phase components in this document remain designs until the implementation-
 | Existing code | Current responsibility | Architectural seam |
 |---|---|---|
 | `src/extension/extension.ts` | Extension activation and command coordination | Extension-host composition root |
-| `src/extension/NodeGraphEditorProvider.ts` | Custom editor adapter, whole-file JSON load/save, link routing, PDF launch, image persistence, and export dispatch | Remains the unchanged single-paper adapter; project reads use `PaperGraphRepository` separately |
+| `src/extension/NodeGraphEditorProvider.ts` | Custom editor adapter, whole-file JSON load/save, link routing, PDF launch, image persistence, export dispatch, and a narrow stable-node selection bridge | Keeps single-paper persistence independent; project reads use `PaperGraphRepository` separately |
 | `src/webview/types/graph.ts` and `schema/nodegraph.schema.json` | Existing single-paper in-memory and persisted shape | Paper-analysis contract; remains unchanged by synthesis persistence |
-| `src/webview/hooks/useGraph.ts` | Webview editing state, history, dirty-state handling, and save messages | Existing graph-editing logic; no project-state ownership |
+| `src/webview/hooks/useGraph.ts` | Webview editing state, history, dirty-state handling, save messages, and stable node-selection messages | Existing graph-editing logic; no project-state ownership |
 | `src/extension/PdfViewerPanel.ts`, `src/pdfviewer/main.ts`, `src/pdfviewer/textMatch.ts` | PDF loading, quotation search, and visual verification | Existing interactive source adapter; Phase 1 adds separate persisted integrity checks without changing it |
-| `src/extension/htmlExporter.ts` | Standalone single-paper HTML generation | Existing `ExportService` implementation for paper graphs; synthesis export remains proposed |
+| `src/extension/htmlExporter.ts` | Standalone single-paper HTML generation | Existing paper-graph exporter; the separate Phase 2 matrix exporter does not change it |
 | `src/extension/imageManager.ts` | Sidecar image paths and file I/O | Paper-asset infrastructure |
 
-`NodeGraphEditorProvider` currently spans several infrastructure concerns. Phase 1 preserves that working single-paper path and keeps project persistence, integrity, indexing, and taxonomy resolution outside the provider.
+`NodeGraphEditorProvider` currently spans several infrastructure concerns. Phase 2 adds only the stable selection bridge needed to synchronize an open paper graph with a matrix cell. Project persistence, integrity, indexing, taxonomy, and matrix policy remain outside the provider and webview.
 
 Task 0 removes the obsolete requirement that every legacy node contain an `images` array from `schema/nodegraph.schema.json`; the 0.7.2 TypeScript model and shipped demos already treat that field as absent. This aligns validation with the existing format and changes no runtime or persisted graph.
 
@@ -76,6 +79,22 @@ Task 0 removes the obsolete requirement that every legacy node contain an `image
 | `src/extension/project/SchemaVersionPolicy.ts` | Select current-version read-write or unsupported-version read-only behavior |
 | `src/extension/project/Phase1ProjectService.ts` | Coordinate registry, integrity, indexing, and query operations without VS Code APIs |
 | `src/extension/project/ProjectCommands.ts` | Provide the minimum VS Code commands needed to exercise Phase 1 |
+
+### Phase 2 Runtime Map
+
+| Phase 2 code | Responsibility |
+|---|---|
+| `src/extension/project/ExtractionService.ts` | Validate and import authoritative per-paper extraction proposals |
+| `src/extension/project/TaxonomyService.ts` | Propose, review, remap, and non-destructively merge constructs and paradigms |
+| `src/extension/project/ReviewStateService.ts` | Enforce researcher authority and independent verification transitions |
+| `src/extension/project/VerificationService.ts` | Build the source-verification queue, open source locations, and persist verification decisions |
+| `src/extension/project/SchemaMigrationService.ts` | Perform the explicit researcher-invoked `1.0.0` to `1.1.0` project upgrade |
+| `src/extension/project/IndexBuilder.ts` | Build extraction, methodology, construct, verification, and staleness summaries without retaining paper graphs |
+| `src/extension/project/QueryService.ts` | Filter matrix summaries and hydrate only selected extraction detail |
+| `src/extension/project/MatrixCsvExporter.ts` | Produce stable, quoted, spreadsheet-safe UTF-8 matrix CSV |
+| `src/extension/project/Phase2ProjectService.ts` | Coordinate Phase 2 operations without VS Code APIs |
+| `src/extension/project/MatrixPanel.ts` | Render matrix state and translate webview messages into service calls |
+| `src/extension/project/Phase2Commands.ts` | Collect researcher input, call Phase 2 services, and present structured results |
 
 ## 4. Core Invariants
 
@@ -151,13 +170,17 @@ VS Code Extension Host
 ├── PaperGraphRepository
 ├── SynthesisRepository
 ├── IntegrityService
+├── ExtractionService
 ├── TaxonomyService
 ├── ConstructResolver
 ├── IndexBuilder
 ├── QueryService
 ├── ReviewStateService
+├── VerificationService
 ├── SchemaMigrationService
-├── ExportService
+├── MatrixCsvExporter
+├── Phase2ProjectService
+├── MatrixPanel
 └── AgentWorkspaceService
 Webview
 ├── MatrixView
@@ -167,6 +190,8 @@ Webview
 ├── GapAlignmentView
 └── ReviewDashboard
 ```
+
+The Phase 2 runtime implements the matrix, evidence inspection, extraction, taxonomy, verification, migration, and CSV portions of this map. Claim-ledger, gap-alignment, broader review-dashboard, and agent-workspace capabilities remain planned.
 
 Each component has one abstraction level and one reason to change. The safety-critical boundaries are specified below:
 
@@ -188,6 +213,7 @@ Each component has one abstraction level and one reason to change. The safety-cr
 
 **TaxonomyService**
 - Owns construct proposal, approval, deprecation, and merge policy.
+- Adds a merged construct's canonical term and aliases to the primary using shared normalization and deduplication.
 - Delegates identifier resolution to `ConstructResolver`.
 - Does **not** write approval state directly.
 
@@ -218,18 +244,22 @@ literature-project/
 │   ├── smith-2024.pdf
 │   ├── jones-2025.nodegraph.json
 │   └── jones-2025.pdf
+├── extractions/
+│   ├── paper_001.json            # authoritative standardized extraction
+│   └── paper_002.json            # authoritative standardized extraction
 ├── synthesis/
-│   ├── claims.json
-│   ├── conflicts.json
-│   ├── gaps.json
-│   └── research-questions.json
+│   ├── claims.json               # authoritative; Phase 3 workflow deferred
+│   ├── conflicts.json            # authoritative; Phase 3 workflow deferred
+│   ├── gaps.json                 # authoritative; Phase 4 workflow deferred
+│   └── research-questions.json   # authoritative; Phase 4 workflow deferred
 ├── taxonomy/
-│   └── constructs.json
+│   ├── constructs.json           # authoritative construct taxonomy
+│   └── methodologies.json        # authoritative methodology registry
 ├── evidence/
-│   └── records.json
+│   └── records.json              # authoritative evidence collection
 ├── indexes/
-│   ├── papers.index.json
-│   └── evidence.index.json
+│   ├── papers.index.json         # derived and rebuildable
+│   └── evidence.index.json       # derived and rebuildable
 └── audit/
     └── events.jsonl
 ```
@@ -240,6 +270,7 @@ literature-project/
 {
   "paperId": "paper_001",
   "path": "papers/smith-2024.nodegraph.json",
+  "extractionPath": "extractions/paper_001.json",
   "source": {
     "sourceId": "source_001",
     "relativePath": "papers/smith-2024.pdf",
@@ -251,9 +282,9 @@ literature-project/
 }
 ```
 
-The source record is authoritative and remains available when either index is deleted. The manifest still points to subordinate documents rather than embedding their content; the alternative monolithic model remains rejected.
+The source record is authoritative and remains available when either index is deleted. Each `extractionPath` points to that paper's authoritative standardized extraction. `documents.methodologies` points to the governed paradigm registry. The manifest still points to subordinate documents rather than embedding their content; the alternative monolithic model remains rejected.
 
-Every persisted path has a draft-07 contract. Paper paths continue to use `schema/nodegraph.schema.json`; claims, conflicts, gaps, research questions, constructs, authoritative evidence records, paper indexes, and evidence indexes use their corresponding files under `docs/schemas/`; each non-empty audit-log line uses `audit-event.schema.json`. Indexes have schemas so corrupt caches are rejected, but they remain derived and disposable rather than authoritative. `evidence/records.json` owns evidence; `indexes/evidence.index.json` only accelerates lookup.
+Every persisted path has a draft-07 contract. Paper paths continue to use `schema/nodegraph.schema.json`; extractions use `extraction.schema.json`; methodologies use `methodology-registry.schema.json`; claims, conflicts, gaps, research questions, constructs, authoritative evidence records, paper indexes, and evidence indexes use their corresponding files under `docs/schemas/`; each non-empty audit-log line uses `audit-event.schema.json`. Indexes have schemas so corrupt caches are rejected, but they remain derived and disposable rather than authoritative. `evidence/records.json` owns evidence; `indexes/evidence.index.json` only accelerates lookup. Per-paper extraction files own standardized extraction; the paper index only summarizes them.
 
 ## 8. Provenance and Referential Integrity
 
@@ -371,9 +402,9 @@ Each index entry records enough to determine staleness without opening the full 
 }
 ```
 
-In Phase 1, `IndexBuilder` produces searchable metadata already present in paper graphs: title, authors, publication year when available, DOI, and tags. Indexing and query code share the same whitespace, Unicode, and case normalization rules. Phase 2 may add standardized extraction and taxonomy summaries. `QueryService` fetches a full paper graph only when detailed paper content is requested.
+In Phase 1, `IndexBuilder` produces searchable metadata already present in paper graphs: title, authors, publication year when available, DOI, and tags. Phase 2 extends each paper entry with its extraction revision, taxonomy and extractor versions, approved and pending mappings, methodology, population context, finding/evidence identifiers, independent verification summaries, and staleness. Indexing and query code share the same whitespace, Unicode, and case normalization rules. `QueryService` opens no paper graphs to render or filter the matrix and reads only the selected extraction when a cell is opened.
 
-**Partial re-indexing.** When a single paper graph changes (e.g. `smith-2024.nodegraph.json` is edited), `IndexBuilder` compares the file's current content hash against the `paperGraphHash` already stored in `papers.index.json` and rebuilds only entries whose graph hash, registered source identity, taxonomy version, path, or indexer version changed. Removed registrations are omitted from the completed result. It does not rebuild the full project index on every edit; this keeps background CPU/IO cost proportional to the size of the change, not the size of the corpus. Fully hydrating 100–300 paper graphs at project open would create unnecessary startup latency and memory pressure, particularly for graphs containing quotations, tables, and images — the incremental summary index exists to avoid that, not because it has been benchmarked as impossible.
+**Partial re-indexing.** When a single paper graph changes (e.g. `smith-2024.nodegraph.json` is edited), `IndexBuilder` compares current graph, extraction, source, taxonomy, path, and extractor state against `papers.index.json`. A current PDF hash that differs from the registered source identity prevents reuse and produces a stale entry. Removed registrations are omitted from the completed result. It does not rebuild the full project index on every edit; this keeps background CPU/IO cost proportional to the size of the change, not the size of the corpus. Fully hydrating 100–300 paper graphs at project open would create unnecessary startup latency and memory pressure, particularly for graphs containing quotations, tables, and images — the incremental summary index exists to avoid that, not because it has been benchmarked as impossible.
 
 The paper and evidence indexes are fully built and validated in memory before either target changes. `AtomicJsonWriter` stages the pair in the target filesystems and restores both prior indexes if replacement fails. A failed rebuild therefore cannot leave one new index beside one old index. Because both files are derived, a missing or invalid pair remains recoverable from the manifest, paper graphs, and authoritative evidence records.
 
@@ -494,23 +525,24 @@ Persisted schema version is tracked independently of extension version:
 {
   "schema": {
     "name": "nodegraph-project",
-    "version": "1.0.0"
+    "version": "1.1.0"
   }
 }
 ```
 
 `SchemaMigrationService` exclusively owns synthesis migrations. Repositories may detect versions but may not embed migration logic.
 
-- The current supported synthesis contract is `1.0.0`.
+- The current supported synthesis contract is `1.1.0`.
+- Schema `1.0.0` remains frozen and opens read-only with an actionable migration-required diagnostic.
 - A current-version document opens read-write after validation.
 - A known older version with a registered migration opens read-only until the user explicitly runs that migration.
-- Migration writes use the same mutation and revision contract as ordinary writes, invalidate both indexes, and append a migration audit event.
+- The one supported migration adds per-paper extraction registrations and the methodology registry. It validates the proposed manifest and subordinate documents, creates subordinate documents first, replaces the manifest last through `MutationRepository`, invalidates both indexes, and appends a migration audit event.
+- Failure before manifest replacement removes files created by the attempt and preserves the original `1.0.0` project. Failure while recording the post-replacement audit is reported as a committed write requiring recovery; it is not falsely reported as a rollback.
+- A failure to remove a derived index after manifest replacement is reported without removing the newly authoritative extraction or methodology documents. A normal index rebuild remains the recovery.
 - A newer version, or an older version without a registered migration path, opens read-only with an actionable unsupported-version diagnostic.
 - Unsupported documents are never rewritten, downgraded, or partially loaded into writable state.
 - The existing single-paper schema/version remains independent from synthesis schema versions.
-- The corrected `1.0.0` contract is frozen when the first Phase 1 runtime can create or modify a synthesis project. Later persisted-shape changes require a new semantic schema version and an explicit migration path.
-
-No migration is registered in the 0.0.0 application baseline.
+- The corrected `1.0.0` contract was frozen by the first Phase 1 write-capable runtime. Phase 2 therefore uses additive schema `1.1.0` rather than editing `1.0.0` in place.
 
 ## 17. Concurrency and Transaction Model
 
@@ -518,7 +550,7 @@ Revisions are owned per authoritative document, not project-wide. A document rev
 
 Every write targets exactly one authoritative document and **MUST** use `mutation-envelope.schema.json`. `baseRevision` is that target document's current revision. The literal `absent` is accepted only while `ProjectRegistry` initializes a new project. Later mutation paths cannot recreate a missing authoritative document with `absent`. A write whose base revision does not match **MUST** fail before any operation is applied.
 
-Phase 1 applies this envelope in `SynthesisRepository`, `ProjectRegistry`, and `MutationRepository`. The existing single-paper editor continues its 0.7.2 `WorkspaceEdit` whole-file save path unchanged.
+Phase 1 and Phase 2 apply this envelope in `SynthesisRepository`, `ProjectRegistry`, `ExtractionService`, `TaxonomyService`, `VerificationService`, `SchemaMigrationService`, and `MutationRepository`. The existing single-paper editor continues its 0.7.2 `WorkspaceEdit` whole-file save path unchanged.
 
 ```json
 {
@@ -554,13 +586,13 @@ Before replacement, the repository verifies that the audit log exists and has a 
 
 After a successful atomic target replacement, the repository checks the log again, then appends and flushes the audit event. If the log changes or that append otherwise fails after replacement, the document remains committed, the failure reports the committed revision and original audit error, and the active runtime blocks later writes for that project in recovery mode. Other open projects are not blocked. Phase 1 does not attempt an unsafe rollback over a possibly newer document.
 
-This contract prevents silent last-write-wins behavior for offline multi-agent and human-plus-agent edits. A future merge UI may replay a rejected operation set against the new revision; Phase 1 preserves the rejected operations but introduces no merge or synthesis UI.
+This contract prevents silent last-write-wins behavior for offline multi-agent and human-plus-agent edits. A future merge UI may replay a rejected operation set against the new revision; Phase 2 preserves the rejected operations but introduces no merge UI.
 
 ## 18. Audit and Decision Provenance
 
 Git history is useful but insufficient because users may not commit after every analytical decision. The system therefore maintains an append-only audit log at `audit/events.jsonl`.
 
-Phase 1 emits project creation, paper registration and removal, source-hash change, index rebuild, accepted document mutation, and rejected stale-revision events. Later phases may add quotation verification, construct remapping, synthesis review, gap, research-question, advisor, and migration events.
+Phase 1 emits project creation, paper registration and removal, source-hash change, index rebuild, accepted document mutation, and rejected stale-revision events. Phase 2 adds extraction import, independent verification, construct and paradigm proposal/review/remap/merge, and schema-migration events. A construct-merge event records both the deprecated construct ID and the approved primary ID. Later phases may add synthesis review, gap, research-question, and advisor events.
 
 ```json
 {
@@ -588,7 +620,7 @@ Audit events **MUST NOT** be rewritten in place. Corrections are recorded as lat
 
 ## 20. Related Documents
 
-- `PROJECTS.md` — Phase 1 project commands, authority boundaries, validation, index recovery, and compatibility.
+- `PROJECTS.md` — project commands, Phase 2 extraction and matrix operations, authority boundaries, index recovery, and compatibility.
 - `SYNTHESIS_DOMAIN_MODEL.md` — evidence levels, constructs, findings, synthesis claims, conflict objects, mechanisms, context, boundary conditions, candidate gaps, research-question alignment, evidence appraisal, methodological paradigms.
 - `SYNTHESIS_WORKFLOWS.md` — import, extraction, normalization, verification, synthesis, conflict review, adversarial gap testing, researcher approval, dissertation planning, exports.
 - `ROADMAP.md` — implementation phases, MVP scope, sequencing rationale.
@@ -601,4 +633,4 @@ Audit events **MUST NOT** be rewritten in place. Corrections are recorded as lat
 
 > NodeGraph preserves individual paper graphs as independent evidence sources. A project-level synthesis layer creates normalized, reviewable relationships across those sources. Every dissertation-level conclusion remains traceable through paper-level interpretation to exact evidence in a version-identified source document.
 
-The matrix, claim ledger, adversarial pass, and paragraph planner are applications built on top of this contract. They are not the architecture itself.
+The Phase 2 matrix is an application built on top of this contract. The claim ledger, adversarial pass, and paragraph planner remain planned applications; they are not the architecture itself.

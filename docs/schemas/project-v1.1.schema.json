@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Jeong-jin-Han/NodeGraph/main/docs/schemas/project-v1.1.schema.json",
+  "title": "NodeGraph Project Manifest 1.1",
+  "description": "Phase 2 manifest with per-paper extraction documents and a methodology registry.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "projectId",
+    "title",
+    "created",
+    "modified",
+    "papers",
+    "documents"
+  ],
+  "properties": {
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "const": "nodegraph-project"
+        },
+        "version": {
+          "$ref": "common.schema.json#/definitions/semanticVersion"
+        }
+      }
+    },
+    "projectId": {
+      "$ref": "common.schema.json#/definitions/projectId"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created": {
+      "$ref": "common.schema.json#/definitions/timestamp"
+    },
+    "modified": {
+      "$ref": "common.schema.json#/definitions/timestamp"
+    },
+    "papers": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "paperId",
+          "path",
+          "source",
+          "extractionPath"
+        ],
+        "properties": {
+          "paperId": {
+            "$ref": "common.schema.json#/definitions/paperId"
+          },
+          "path": {
+            "$ref": "common.schema.json#/definitions/projectRelativePath"
+          },
+          "source": {
+            "$ref": "common.schema.json#/definitions/sourceDocument"
+          },
+          "extractionPath": {
+            "$ref": "common.schema.json#/definitions/projectRelativePath"
+          }
+        }
+      }
+    },
+    "documents": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claims",
+        "conflicts",
+        "gaps",
+        "researchQuestions",
+        "constructs",
+        "methodologies",
+        "evidence",
+        "paperIndex",
+        "evidenceIndex",
+        "auditLog"
+      ],
+      "properties": {
+        "claims": {
+          "$ref": "common.schema.json#/definitions/projectRelativePath"
+        },
+        "conflicts": {
+          "$ref": "common.schema.json#/definitions/projectRelativePath"
+        },
+        "gaps": {
+          "$ref": "common.schema.json#/definitions/projectRelativePath"
+        },
+        "researchQuestions": {
+          "$ref": "common.schema.json#/definitions/projectRelativePath"
+        },
+        "constructs": {
+          "$ref": "common.schema.json#/definitions/projectRelativePath"
+        },
+        "methodologies": {
+          "$ref": "common.schema.json#/definitions/projectRelativePath"
+        },
+        "evidence": {
+          "$ref": "common.schema.json#/definitions/projectRelativePath"
+        },
+        "paperIndex": {
+          "$ref": "common.schema.json#/definitions/projectRelativePath"
+        },
+        "evidenceIndex": {
+          "$ref": "common.schema.json#/definitions/projectRelativePath"
+        },
+        "auditLog": {
+          "$ref": "common.schema.json#/definitions/projectRelativePath"
+        }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}

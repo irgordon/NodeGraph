@@ -19,9 +19,11 @@ import {
 
 export interface MutationOptions {
   schemaName: string
+  currentSchemaName?: string
   auditPath: string
   auditAction: string
   auditObjectId: string
+  auditMetadata?: Record<string, unknown>
   allowCreate?: boolean
   validateCandidate?(candidate: unknown): Promise<ProjectDiagnostic[]>
 }
@@ -77,7 +79,12 @@ export class MutationRepository {
     options: MutationOptions
   ): Promise<MutationResult> {
     const target = await this.paths.resolve(projectRoot, envelope.targetDocument)
-    const current = await readCurrentDocument(target, envelope.targetDocument, this.schemas, options.schemaName)
+    const current = await readCurrentDocument(
+      target,
+      envelope.targetDocument,
+      this.schemas,
+      options.currentSchemaName ?? options.schemaName
+    )
     if (current.diagnostics.length) return invalidMutation(envelope, current.diagnostics)
     const currentRevision = current.value === undefined
       ? 'absent'
@@ -155,7 +162,7 @@ export class MutationRepository {
           target,
           envelope.targetDocument,
           this.schemas,
-          options.schemaName
+          options.currentSchemaName ?? options.schemaName
         )
         if (currentRevision !== expectedRevision) {
           throw new RevisionChangedBeforeReplace(currentRevision)
@@ -188,6 +195,9 @@ export class MutationRepository {
       envelope.targetDocument
     )
     if (hasErrors(schemaDiagnostics)) return schemaDiagnostics
+    if (current === undefined && options.allowCreate) {
+      return await options.validateCandidate?.(candidate) ?? schemaDiagnostics
+    }
     const approvalDiagnostics = this.reviews.validateApprovalAuthority(
       current,
       candidate,
@@ -229,7 +239,11 @@ export class MutationRepository {
         objectId: options.auditObjectId,
         baseRevision: envelope.baseRevision,
         resultingRevision,
-        metadata: { mutationId: envelope.mutationId, targetDocument: envelope.targetDocument },
+        metadata: {
+          ...options.auditMetadata,
+          mutationId: envelope.mutationId,
+          targetDocument: envelope.targetDocument,
+        },
       }, options.allowCreate ?? false)
     } catch (error) {
       this.recoveryRequired.add(projectKey)
@@ -264,7 +278,7 @@ async function readCurrentDocument(
     value: parsed.value,
     diagnostics: [
       ...schemas.validate(schemaName, parsed.value, displayPath),
-      ...inspectSupportedSchemaVersion(parsed.value, displayPath),
+      ...inspectSupportedSchemaVersion(parsed.value, displayPath, schemaName),
     ],
   }
 }

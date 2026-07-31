@@ -29,6 +29,7 @@ import {
   Phase1ProjectService,
 } from '../src/extension/project/Phase1ProjectService'
 import { MutationAuditError } from '../src/extension/project/MutationRepository'
+import { createEmptyExtraction } from '../src/extension/project/extractionDefaults'
 import {
   createProjectRuntime,
   ProjectRuntime,
@@ -75,7 +76,7 @@ test('project initialization records absent base revisions', async t => {
   const creationEvents = audit.events.filter(event =>
     event.action === 'project.created' || event.action === 'project.document-created'
   )
-  assert.equal(creationEvents.length, 7)
+  assert.equal(creationEvents.length, 8)
   assert.ok(creationEvents.every(event => event.baseRevision === 'absent'))
   assert.ok(creationEvents.every(event => event.resultingRevision?.startsWith('sha256:')))
 })
@@ -713,6 +714,7 @@ test('paper registration and removal are audited without changing the paper grap
   )
   assert.deepEqual(persistedIndex.entries, [])
   const audit = await context.runtime.audit.inspect(context.root, manifest.documents.auditLog)
+  assert.ok(audit.events.some(event => event.action === 'extraction.initialized'))
   assert.ok(audit.events.some(event => event.action === 'paper.registered'))
   assert.ok(audit.events.some(event => event.action === 'paper.unregistered'))
 })
@@ -733,11 +735,11 @@ test('application version begins at 0.0.0', async () => {
   assert.equal(packageJson.version, '0.0.0')
 })
 
-test('project schema version remains independent at 1.0.0', async t => {
+test('project schema version remains independent at 1.1.0', async t => {
   const context = await createProject(t)
   const manifest = await readManifest(context)
   const packageJson = await readJson<any>(path.join(REPOSITORY_ROOT, 'package.json'))
-  assert.equal(manifest.schema.version, '1.0.0')
+  assert.equal(manifest.schema.version, '1.1.0')
   assert.notEqual(manifest.schema.version, packageJson.version)
 })
 
@@ -762,6 +764,7 @@ function initialProjectFilePaths(): string[] {
     'synthesis/gaps.json',
     'synthesis/research-questions.json',
     'taxonomy/constructs.json',
+    'taxonomy/methodologies.json',
     'evidence/records.json',
     'indexes/papers.index.json',
     'indexes/evidence.index.json',
@@ -799,9 +802,15 @@ async function writeUnregisteredPaper(context: ProjectContext, index: number): P
 
 async function writePaper(context: ProjectContext, index: number): Promise<PaperRegistration> {
   const files = await writePaperFiles(context.root, index)
+  const extractionPath = paperExtractionPath(index)
+  await writeJson(
+    path.join(context.root, extractionPath),
+    createEmptyExtraction(paperId(index), FIXED_TIME)
+  )
   return {
     paperId: paperId(index),
     path: paperGraphPath(index),
+    extractionPath,
     source: {
       sourceId: sourceId(index),
       relativePath: paperPdfPath(index),
@@ -1015,6 +1024,10 @@ function paperGraphPath(index: number): string {
 
 function paperPdfPath(index: number): string {
   return `papers/paper-${index.toString().padStart(3, '0')}.pdf`
+}
+
+function paperExtractionPath(index: number): string {
+  return `extractions/paper-${index.toString().padStart(3, '0')}.json`
 }
 
 function assertDiagnostic(
