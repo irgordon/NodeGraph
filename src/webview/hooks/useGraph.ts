@@ -769,6 +769,10 @@ export function useGraph() {
     vscode.postMessage({ type: 'openHelp' })
   }, [])
 
+  const notifyNodeSelection = useCallback((nodeId: string) => {
+    vscode.postMessage({ type: 'nodeSelected', nodeId })
+  }, [])
+
   return {
     graph, imageUris,
     updateNodePosition, toggleContent, toggleOriginal,
@@ -778,7 +782,7 @@ export function useGraph() {
     setNodeWidth, setNodeHeight, setNodeFontSize, bumpFontSize, setFontSizeExact, pushHistory,
     collapseAll, expandAll, expandNodes, collapseNodes, expandByLabel, setNodeTemplate, addOriginal, addLink, deleteLink, openLink, searchInPdf, exportHtml,
     undo, redo, canUndo, canRedo,
-    saveGraph, setGraph, reload, openHelp,
+    saveGraph, setGraph, reload, openHelp, notifyNodeSelection,
     addCanvasImage, addFilenameToNode, saveCanvasImage, updateCanvasImage, removeCanvasImage, moveCanvasImageToNode,
     lastAddedCanvasImageId,
   }

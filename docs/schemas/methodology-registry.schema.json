@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Jeong-jin-Han/NodeGraph/main/docs/schemas/methodology-registry.schema.json",
+  "title": "NodeGraph Methodology Registry",
+  "description": "Project-owned methodological paradigm registry.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "registryVersion",
+    "paradigms",
+    "modified"
+  ],
+  "properties": {
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "const": "nodegraph-methodology-registry"
+        },
+        "version": {
+          "const": "1.0.0"
+        }
+      }
+    },
+    "registryVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "paradigms": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/paradigm"
+      }
+    },
+    "modified": {
+      "$ref": "common.schema.json#/definitions/timestamp"
+    }
+  },
+  "definitions": {
+    "paradigm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "paradigmId",
+        "label",
+        "aliases",
+        "status",
+        "reviewState"
+      ],
+      "properties": {
+        "paradigmId": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "aliases": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "status": {
+          "enum": [
+            "proposed",
+            "approved"
+          ]
+        },
+        "reviewState": {
+          "$ref": "common.schema.json#/definitions/reviewState"
+        }
+      }
+    }
+  }
+}

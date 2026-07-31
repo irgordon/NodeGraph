@@ -1,0 +1,257 @@
+{
+  "schema": {
+    "name": "nodegraph-extraction",
+    "version": "1.0.0"
+  },
+  "extractionId": "extraction_001",
+  "paperId": "paper_001",
+  "extractorVersion": "0.0.0",
+  "extractionStatus": "reviewed",
+  "fields": {
+    "researchProblem": {
+      "reportingStatus": "present",
+      "sourceText": "The study asks how shared leadership shapes trust.",
+      "normalizedValue": "Relationship between shared leadership and trust",
+      "evidenceIds": [
+        "evidence_001"
+      ]
+    },
+    "purpose": {
+      "reportingStatus": "not-reported"
+    },
+    "researchQuestionsOrHypotheses": {
+      "reportingStatus": "absent"
+    },
+    "theoreticalFramework": {
+      "reportingStatus": "unclear"
+    },
+    "keyConstructs": {
+      "reportingStatus": "present",
+      "mappingIds": [
+        "mapping_shared_leadership"
+      ]
+    },
+    "population": {
+      "reportingStatus": "present",
+      "sourceText": "Doctoral research teams",
+      "normalizedValue": "Doctoral researchers"
+    },
+    "setting": {
+      "reportingStatus": "not-reported"
+    },
+    "sampleSize": {
+      "reportingStatus": "present",
+      "sourceText": "42 participants",
+      "normalizedValue": "42"
+    },
+    "methodology": {
+      "reportingStatus": "present",
+      "sourceText": "A pragmatic mixed-methods study"
+    },
+    "dataCollection": {
+      "reportingStatus": "present",
+      "items": [
+        {
+          "extractionItemId": "item_interviews",
+          "sourceText": "Semi-structured interviews",
+          "normalizedValue": "Interviews",
+          "evidenceIds": [],
+          "reviewState": {
+            "verification": {
+              "source": "pending",
+              "interpretation": "verified",
+              "classification": "verified"
+            },
+            "approval": {
+              "researcher": "approved",
+              "advisor": "not-reviewed"
+            },
+            "origin": "human"
+          }
+        }
+      ]
+    },
+    "analysisMethod": {
+      "reportingStatus": "present",
+      "items": [
+        {
+          "extractionItemId": "item_thematic_analysis",
+          "sourceText": "Reflexive thematic analysis",
+          "normalizedValue": "Thematic analysis",
+          "evidenceIds": [],
+          "reviewState": {
+            "verification": {
+              "source": "pending",
+              "interpretation": "verified",
+              "classification": "verified"
+            },
+            "approval": {
+              "researcher": "approved",
+              "advisor": "not-reviewed"
+            },
+            "origin": "human"
+          }
+        }
+      ]
+    },
+    "findings": {
+      "reportingStatus": "present",
+      "items": [
+        {
+          "findingId": "finding_001",
+          "nodeId": "node_claim_04",
+          "sourceText": "Shared leadership improves trust.",
+          "normalizedValue": "Shared leadership is associated with stronger trust.",
+          "constructMappingIds": [
+            "mapping_shared_leadership"
+          ],
+          "evidenceIds": [
+            "evidence_001"
+          ],
+          "reviewState": {
+            "verification": {
+              "source": "verified",
+              "interpretation": "verified",
+              "classification": "verified"
+            },
+            "approval": {
+              "researcher": "approved",
+              "advisor": "not-reviewed"
+            },
+            "origin": "human"
+          }
+        }
+      ]
+    },
+    "mechanisms": {
+      "reportingStatus": "not-reported"
+    },
+    "moderators": {
+      "reportingStatus": "not-reported"
+    },
+    "limitations": {
+      "reportingStatus": "not-reported"
+    },
+    "boundaryConditions": {
+      "reportingStatus": "not-reported"
+    },
+    "recommendations": {
+      "reportingStatus": "not-applicable"
+    },
+    "exactEvidenceQuotations": {
+      "reportingStatus": "present",
+      "evidenceIds": [
+        "evidence_001"
+      ]
+    }
+  },
+  "methodology": {
+    "methodologicalParadigm": {
+      "reportingStatus": "present",
+      "sourceTerm": "pragmatic",
+      "paradigmId": "pragmatist",
+      "mappingStatus": "approved",
+      "reviewState": {
+        "verification": {
+          "source": "pending",
+          "interpretation": "verified",
+          "classification": "verified"
+        },
+        "approval": {
+          "researcher": "approved",
+          "advisor": "not-reviewed"
+        },
+        "origin": "human"
+      }
+    },
+    "researchApproach": {
+      "reportingStatus": "present",
+      "sourceTerm": "mixed-methods",
+      "normalizedValue": "Mixed methods",
+      "reviewState": {
+        "verification": {
+          "source": "pending",
+          "interpretation": "verified",
+          "classification": "verified"
+        },
+        "approval": {
+          "researcher": "approved",
+          "advisor": "not-reviewed"
+        },
+        "origin": "human"
+      }
+    },
+    "analyticalTechnique": {
+      "reportingStatus": "present",
+      "sourceTerm": "reflexive thematic analysis",
+      "normalizedValue": "Thematic analysis",
+      "reviewState": {
+        "verification": {
+          "source": "pending",
+          "interpretation": "verified",
+          "classification": "verified"
+        },
+        "approval": {
+          "researcher": "approved",
+          "advisor": "not-reviewed"
+        },
+        "origin": "human"
+      }
+    },
+    "sampleCharacteristics": {
+      "reportingStatus": "present",
+      "sourceText": "42 doctoral researchers",
+      "n": 42,
+      "unitOfAnalysis": "Individual researcher",
+      "reviewState": {
+        "verification": {
+          "source": "pending",
+          "interpretation": "verified",
+          "classification": "verified"
+        },
+        "approval": {
+          "researcher": "approved",
+          "advisor": "not-reviewed"
+        },
+        "origin": "human"
+      }
+    }
+  },
+  "constructMappings": [
+    {
+      "mappingId": "mapping_shared_leadership",
+      "sourceTerm": "shared leadership",
+      "constructId": "construct_shared_leadership",
+      "mappingStatus": "approved",
+      "evidenceIds": [
+        "evidence_001"
+      ],
+      "reviewState": {
+        "verification": {
+          "source": "verified",
+          "interpretation": "verified",
+          "classification": "verified"
+        },
+        "approval": {
+          "researcher": "approved",
+          "advisor": "not-reviewed"
+        },
+        "origin": "human"
+      }
+    }
+  ],
+  "reviewState": {
+    "verification": {
+      "source": "verified",
+      "interpretation": "verified",
+      "classification": "verified"
+    },
+    "approval": {
+      "researcher": "approved",
+      "advisor": "not-reviewed"
+    },
+    "origin": "human"
+  },
+  "created": "2026-07-30T12:00:00Z",
+  "modified": "2026-07-30T12:00:00Z"
+}

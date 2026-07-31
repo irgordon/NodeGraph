@@ -1,0 +1,16 @@
+{
+  "schema": {
+    "name": "nodegraph-methodology-registry",
+    "version": "1.0.0"
+  },
+  "registryVersion": 0,
+  "paradigms": [
+    {
+      "paradigmId": "Invalid ID",
+      "label": "",
+      "aliases": [],
+      "status": "approved"
+    }
+  ],
+  "modified": "not-a-timestamp"
+}

@@ -1,0 +1,15 @@
+{
+  "schema": {
+    "name": "nodegraph-extraction",
+    "version": "1.0.0"
+  },
+  "extractionId": "extraction_invalid",
+  "paperId": "paper_001",
+  "extractorVersion": "0.0.0",
+  "extractionStatus": "draft",
+  "fields": {
+    "researchProblem": {
+      "reportingStatus": "present"
+    }
+  }
+}

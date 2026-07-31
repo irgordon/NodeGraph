@@ -16,7 +16,7 @@ export function App() {
     setNodeWidth, setNodeHeight, setNodeFontSize, bumpFontSize, setFontSizeExact, pushHistory,
     collapseAll, expandAll, expandNodes, collapseNodes, expandByLabel, setNodeTemplate, addOriginal, addLink, deleteLink, openLink, searchInPdf, exportHtml,
     undo, redo, canUndo, canRedo,
-    saveGraph, reload, openHelp,
+    saveGraph, reload, openHelp, notifyNodeSelection,
   } = useGraph()
 
   const {
@@ -35,6 +35,10 @@ export function App() {
   const [openSearchSignal, setOpenSearchSignal] = React.useState(0)
   const [fitViewSignal, setFitViewSignal] = React.useState(0)
   const [focusCanvasSignal, setFocusCanvasSignal] = React.useState(0)
+  const [focusNodeRequest, setFocusNodeRequest] = React.useState<{
+    nodeId: string
+    requestId: number
+  } | null>(null)
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -53,6 +57,12 @@ export function App() {
       else if (e.data?.type === 'collapseAll') collapseAll()
       else if (e.data?.type === 'expandAll') expandAll()
       else if (e.data?.type === 'focusCanvas') setFocusCanvasSignal(n => n + 1)
+      else if (e.data?.type === 'focusNode' && typeof e.data.nodeId === 'string') {
+        setFocusNodeRequest(current => ({
+          nodeId: e.data.nodeId,
+          requestId: (current?.requestId ?? 0) + 1,
+        }))
+      }
     }
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
@@ -71,6 +81,7 @@ export function App() {
       openSearchSignal={openSearchSignal}
       fitViewSignal={fitViewSignal}
       focusCanvasSignal={focusCanvasSignal}
+      focusNodeRequest={focusNodeRequest}
       viewport={viewport}
       cursor={cursor}
       nativeWheelHandler={nativeWheelHandler}
@@ -81,6 +92,7 @@ export function App() {
       onContextMenu={onContextMenu}
       onSetViewport={setViewport}
       graph={graph}
+      onNodeSelected={notifyNodeSelection}
       onUpdateNodePosition={updateNodePosition}
       onUpdateNode={updateNodeField}
       onAddNode={(x, y, t) => addNode(x, y, t)}

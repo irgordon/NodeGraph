@@ -4,6 +4,7 @@ import { NodeGraph } from '../../webview/types/graph'
 import { AuditLog } from './AuditLog'
 import {
   calculateByteHash,
+  calculateDocumentRevision,
   calculateEvidenceObjectHash,
   calculateQuoteContentHash,
 } from './canonical'
@@ -12,6 +13,7 @@ import { diagnostic, hasErrors } from './diagnostics'
 import { isFileError } from './documentIO'
 import { PaperGraphRepository } from './PaperGraphRepository'
 import { ProjectPathError, ProjectPathResolver } from './ProjectPathResolver'
+import { paperIndexSchemaName } from './SchemaVersionPolicy'
 import { SynthesisRepository } from './SynthesisRepository'
 import {
   EvidenceIndexDocument,
@@ -119,6 +121,16 @@ export class IntegrityService {
     const diagnostics: ProjectDiagnostic[] = []
     const evidenceByPaper = groupEvidence(bundle.evidence.evidence)
     for (const registration of manifest.papers) {
+      const extraction = await this.synthesis.readExtraction(projectRoot, registration)
+      diagnostics.push(...extraction.diagnostics)
+      if (extraction.value) {
+        diagnostics.push(...await this.synthesis.validateExtraction(
+          projectRoot,
+          manifest,
+          registration,
+          extraction.value
+        ))
+      }
       const result = await this.inspectPaper(
         projectRoot,
         registration,
@@ -140,7 +152,7 @@ export class IntegrityService {
     const paperIndex = await this.synthesis.readDocument<PaperIndexDocument>(
       projectRoot,
       manifest.documents.paperIndex,
-      'paper-index.schema.json'
+      paperIndexSchemaName(manifest.schema.version)
     )
     const evidenceIndex = await this.synthesis.readDocument<EvidenceIndexDocument>(
       projectRoot,
@@ -151,7 +163,13 @@ export class IntegrityService {
       ...paperIndex.diagnostics.map(asRecoverableIndexDiagnostic),
       ...evidenceIndex.diagnostics.map(asRecoverableIndexDiagnostic),
       ...(paperIndex.value
-        ? await validatePaperIndex(projectRoot, manifest, paperIndex.value, this.papers)
+        ? await validatePaperIndex(
+          projectRoot,
+          manifest,
+          paperIndex.value,
+          this.papers,
+          this.synthesis
+        )
         : []),
       ...(evidenceIndex.value
         ? validateEvidenceIndex(bundle.evidence.evidence, evidenceIndex.value, manifest)
@@ -310,14 +328,25 @@ async function validatePaperIndex(
   projectRoot: string,
   manifest: ProjectManifest,
   index: PaperIndexDocument,
-  papers: PaperGraphRepository
+  papers: PaperGraphRepository,
+  synthesis: SynthesisRepository
 ): Promise<ProjectDiagnostic[]> {
   const diagnostics: ProjectDiagnostic[] = []
+  const taxonomy = await synthesis.readTaxonomy(projectRoot, manifest)
+  diagnostics.push(...taxonomy.diagnostics)
   const registrations = new Map(manifest.papers.map(item => [item.paperId, item]))
   for (const registration of manifest.papers) {
     const entry = index.entries.find(item => item.paperId === registration.paperId)
     if (!entry) diagnostics.push(staleIndexDiagnostic(manifest.documents.paperIndex, registration.paperId))
-    else diagnostics.push(...await comparePaperIndexEntry(projectRoot, registration, entry, papers, manifest))
+    else diagnostics.push(...await comparePaperIndexEntry(
+      projectRoot,
+      registration,
+      entry,
+      papers,
+      synthesis,
+      manifest,
+      taxonomy.value?.taxonomyVersion
+    ))
   }
   for (const entry of index.entries) {
     if (!registrations.has(entry.paperId)) {
@@ -332,13 +361,22 @@ async function comparePaperIndexEntry(
   registration: PaperRegistration,
   entry: PaperIndexDocument['entries'][number],
   papers: PaperGraphRepository,
-  manifest: ProjectManifest
+  synthesis: SynthesisRepository,
+  manifest: ProjectManifest,
+  taxonomyVersion: number | undefined
 ): Promise<ProjectDiagnostic[]> {
   try {
     const graphHash = await papers.calculateGraphHash(projectRoot, registration.path)
+    const extraction = await synthesis.readExtraction(projectRoot, registration)
+    const extractionRevision = extraction.value
+      ? calculateDocumentRevision(extraction.value)
+      : undefined
     const stale = entry.paperGraphHash !== graphHash ||
       entry.paperPath !== registration.path ||
-      entry.sourceDocumentHash !== registration.source.sourceDocumentHash
+      entry.sourceDocumentHash !== registration.source.sourceDocumentHash ||
+      entry.extractionPath !== registration.extractionPath ||
+      entry.extractionRevision !== extractionRevision ||
+      entry.taxonomyVersion !== taxonomyVersion
     return stale ? [staleIndexDiagnostic(manifest.documents.paperIndex, registration.paperId)] : []
   } catch {
     return [staleIndexDiagnostic(manifest.documents.paperIndex, registration.paperId)]

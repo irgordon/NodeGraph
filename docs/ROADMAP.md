@@ -1,6 +1,6 @@
 # NodeGraph — Synthesis Layer Roadmap
 
-**Status:** Phase 1 implemented in the 0.0.0 development baseline
+**Status:** Phase 2 implemented in the 0.0.0 development baseline
 **Related documents:** `ARCHITECTURE.md` · `SYNTHESIS_DOMAIN_MODEL.md` · `SYNTHESIS_WORKFLOWS.md`
 
 Schema validation, provenance integrity, and taxonomy normalization are load-bearing for every later phase and are not deferred — data accumulated before they exist would require costly migration once governance is retrofitted. Phases below reflect that ordering.
@@ -51,15 +51,18 @@ Before Phase 1 runtime work began, the unimplemented `1.0.0` contract was correc
 - An index can be deleted and rebuilt without loss of authoritative state.
 - A write based on a stale revision is rejected rather than overwritten.
 
-The implemented Phase 1 surface is deliberately small: VS Code commands exercise project creation, opening, paper registration and removal, validation, full index recovery, and indexed metadata search. No Phase 2 synthesis matrix or standardized extraction UI is included.
+The Phase 1 baseline surface is deliberately small: VS Code commands exercise project creation, opening, paper registration and removal, validation, full index recovery, and indexed metadata search. Phase 2 extends that baseline without changing its authority boundaries.
 
 ## Phase 2 — Standardized extraction + normalization + synthesis matrix
+
+**Status:** Implemented and covered by the Phase 2 integration suite.
 
 - Standardized extraction fields, methodological paradigm/technique tagging (`SYNTHESIS_DOMAIN_MODEL.md` §2–3)
 - Construct taxonomy/registry (`SYNTHESIS_DOMAIN_MODEL.md` §4)
 - Evidence cells, source verification workflow (`SYNTHESIS_WORKFLOWS.md` §4)
 - Lazy-loaded summary index (`ARCHITECTURE.md` §9)
 - CSV export
+- Additive project schema `1.1.0` and an explicit researcher-invoked migration from frozen `1.0.0`
 
 ### Phase 2 exit criteria
 
@@ -67,6 +70,8 @@ The implemented Phase 1 surface is deliberately small: VS Code commands exercise
 - Unapproved construct proposals cannot enter approved synthesis objects.
 - Matrix views load from the summary index and hydrate source detail on demand.
 - Source, interpretation, and classification verification remain independently visible.
+- Matrix CSV has stable columns, full quoting, Unicode support, and spreadsheet-formula protection.
+- Phase 1 and legacy single-paper tests remain unchanged and green.
 
 ## Phase 3 — Claims, conflicts, and evidence-quality weighting
 

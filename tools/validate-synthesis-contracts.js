@@ -24,6 +24,10 @@ const VALID_CASES = [
   ['evidence-index.schema.json', 'valid/evidence-index.json'],
   ['audit-event.schema.json', 'valid/audit-event.json'],
   ['mutation-envelope.schema.json', 'valid/mutation-envelope.json'],
+  ['project-v1.1.schema.json', 'valid/project-v1.1.nodegraph.json'],
+  ['methodology-registry.schema.json', 'valid/methodology-registry.json'],
+  ['extraction.schema.json', 'valid/extraction.json'],
+  ['paper-index-v1.1.schema.json', 'valid/paper-index-v1.1.json'],
 ]
 
 const INVALID_CASES = [
@@ -37,6 +41,9 @@ const INVALID_CASES = [
   ['project.schema.json', 'invalid/absolute-source-path-project.json'],
   ['project.schema.json', 'invalid/traversal-source-path-project.json'],
   ['paper-index.schema.json', 'invalid/malformed-paper-index-metadata.json'],
+  ['project-v1.1.schema.json', 'invalid/project-v1.1-missing-extraction.json'],
+  ['extraction.schema.json', 'invalid/extraction-present-without-source.json'],
+  ['methodology-registry.schema.json', 'invalid/methodology-registry-unapproved-seed.json'],
 ]
 
 function main() {

@@ -8,6 +8,15 @@ import { getNonce } from './nonce'
 import { PdfViewerPanel } from './PdfViewerPanel'
 
 export class NodeGraphEditorProvider implements vscode.CustomTextEditorProvider {
+  private static readonly panels = new Map<string, vscode.WebviewPanel>()
+  private static readonly selectionEmitter = new vscode.EventEmitter<{
+    paperPath: string
+    nodeId: string
+  }>()
+
+  public static readonly onDidSelectNode =
+    NodeGraphEditorProvider.selectionEmitter.event
+
   public static register(context: vscode.ExtensionContext): vscode.Disposable {
     const provider = new NodeGraphEditorProvider(context)
     return vscode.window.registerCustomEditorProvider(
@@ -22,6 +31,14 @@ export class NodeGraphEditorProvider implements vscode.CustomTextEditorProvider 
 
   public static postToActive(message: unknown): void {
     NodeGraphEditorProvider._activeWebview?.postMessage(message)
+  }
+
+  public static focusNode(paperPath: string, nodeId: string): boolean {
+    const panel = NodeGraphEditorProvider.panels.get(path.resolve(paperPath))
+    if (!panel) return false
+    panel.reveal(panel.viewColumn, false)
+    panel.webview.postMessage({ type: 'focusNode', nodeId })
+    return true
   }
 
   private readonly _pendingSaves = new Set<string>()
@@ -41,6 +58,8 @@ export class NodeGraphEditorProvider implements vscode.CustomTextEditorProvider 
       localResourceRoots: [this.context.extensionUri, documentDir],
     }
     webviewPanel.webview.html = this._getHtmlForWebview(webviewPanel.webview)
+    const documentKey = path.resolve(document.uri.fsPath)
+    NodeGraphEditorProvider.panels.set(documentKey, webviewPanel)
 
     const sendGraph = (type: 'load' | 'externalChange') => {
       const text = document.getText()
@@ -152,6 +171,11 @@ export class NodeGraphEditorProvider implements vscode.CustomTextEditorProvider 
       } else if (msg.type === 'openHelp') {
         const readmeUri = vscode.Uri.joinPath(this.context.extensionUri, 'README.md')
         vscode.commands.executeCommand('markdown.showPreviewToSide', readmeUri.with({ fragment: 'features' }))
+      } else if (msg.type === 'nodeSelected' && typeof msg.nodeId === 'string') {
+        NodeGraphEditorProvider.selectionEmitter.fire({
+          paperPath: document.uri.fsPath,
+          nodeId: msg.nodeId,
+        })
       }
     })
 
@@ -181,6 +205,9 @@ export class NodeGraphEditorProvider implements vscode.CustomTextEditorProvider 
     webviewPanel.onDidDispose(() => {
       msgDisposable.dispose()
       changeDisposable.dispose()
+      if (NodeGraphEditorProvider.panels.get(documentKey) === webviewPanel) {
+        NodeGraphEditorProvider.panels.delete(documentKey)
+      }
       if (NodeGraphEditorProvider._activeWebview === webviewPanel.webview) {
         NodeGraphEditorProvider._activeWebview = null
       }

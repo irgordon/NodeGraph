@@ -154,7 +154,7 @@ async function searchProject(
   output.show(true)
 }
 
-async function chooseManifest(clicked?: vscode.Uri): Promise<vscode.Uri | undefined> {
+export async function chooseManifest(clicked?: vscode.Uri): Promise<vscode.Uri | undefined> {
   if (clicked?.fsPath.endsWith('project.nodegraph.json')) return clicked
   const selected = await vscode.window.showOpenDialog({
     canSelectMany: false,
@@ -184,7 +184,7 @@ async function choosePaper(projectRoot: string): Promise<vscode.Uri | undefined>
   return selected?.[0]
 }
 
-async function runCommand(
+export async function runCommand(
   output: vscode.OutputChannel,
   action: () => Promise<void>
 ): Promise<void> {
@@ -244,7 +244,7 @@ function commandErrorMessage(error: unknown): string {
   return `NodeGraph project operation failed: ${safeText(errorMessage(error))}`
 }
 
-function writeDiagnostics(output: vscode.OutputChannel, diagnostics: ProjectDiagnostic[]): void {
+export function writeDiagnostics(output: vscode.OutputChannel, diagnostics: ProjectDiagnostic[]): void {
   for (const item of diagnostics) {
     output.appendLine(
       `[${item.severity}] ${safeText(item.code)} | ${safeText(item.file)} | ${safeText(item.rule)} | ${safeText(item.action)}`

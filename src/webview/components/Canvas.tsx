@@ -12,6 +12,7 @@ interface CanvasProps {
   openSearchSignal: number
   fitViewSignal: number
   focusCanvasSignal: number
+  focusNodeRequest: { nodeId: string; requestId: number } | null
   viewport: Viewport
   cursor: string
   nativeWheelHandler: (e: WheelEvent) => void
@@ -22,6 +23,7 @@ interface CanvasProps {
   onContextMenu: (e: React.MouseEvent<HTMLDivElement>) => void
   onSetViewport: (vp: Viewport) => void
   graph: NodeGraph
+  onNodeSelected: (nodeId: string) => void
   onUpdateNodePosition: (id: string, x: number, y: number) => void
   onUpdateNode: (id: string, field: string, value: string) => void
   onAddNode: (x: number, y: number, template?: string) => void
@@ -652,9 +654,10 @@ export function Canvas({
   openSearchSignal,
   fitViewSignal,
   focusCanvasSignal,
+  focusNodeRequest,
   viewport, cursor, nativeWheelHandler,
   onMouseDown, onMouseMove, onMouseUp, onMouseLeave, onContextMenu,
-  onSetViewport, graph, onUpdateNodePosition, onUpdateNode, onAddNode, onAddChildNode, onDeleteNodes,
+  onSetViewport, graph, onNodeSelected, onUpdateNodePosition, onUpdateNode, onAddNode, onAddChildNode, onDeleteNodes,
   onSetFontSize, onBumpFontSize, onSetFontSizeExact,
   onSetNodeWidth, onSetNodeHeight,
   onPushHistory, onUndo, onRedo, canUndo, canRedo,
@@ -1281,6 +1284,13 @@ export function Canvas({
     flyToNode(id)
   }, [flyToNode])
 
+  useEffect(() => {
+    if (!focusNodeRequest) return
+    if (!graph.nodes.some(node => node.id === focusNodeRequest.nodeId)) return
+    setSelectedIds(new Set([focusNodeRequest.nodeId]))
+    requestAnimationFrame(() => flyToNode(focusNodeRequest.nodeId))
+  }, [focusNodeRequest, graph.nodes, setSelectedIds, flyToNode])
+
   const handleSelectSearchNode = useCallback((id: string) => {
     setSearchSelectedId(id)
     const q = searchQuery.trim().toLowerCase()
@@ -1345,7 +1355,8 @@ export function Canvas({
       if (prev.has(id) && prev.size > 1) return prev  // 멀티드래그 허용
       return new Set([id])
     })
-  }, [setSelectedCanvasImgIds])
+    onNodeSelected(id)
+  }, [setSelectedCanvasImgIds, onNodeSelected])
 
   // 포트 드래그로 엣지 생성
   const handlePortDragStart = useCallback((nodeId: string, port: Port, clientX: number, clientY: number) => {

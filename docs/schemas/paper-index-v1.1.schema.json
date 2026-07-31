@@ -1,0 +1,345 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Jeong-jin-Han/NodeGraph/main/docs/schemas/paper-index-v1.1.schema.json",
+  "title": "NodeGraph Paper and Matrix Summary Index 1.1",
+  "description": "Disposable Phase 2 paper and synthesis-matrix summary index.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "generatedAt",
+    "entries"
+  ],
+  "properties": {
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "const": "nodegraph-paper-index"
+        },
+        "version": {
+          "const": "1.1.0"
+        }
+      }
+    },
+    "generatedAt": {
+      "$ref": "common.schema.json#/definitions/timestamp"
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/entry"
+      }
+    }
+  },
+  "definitions": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "paperId",
+        "paperPath",
+        "paperGraphHash",
+        "sourceDocumentHash",
+        "title",
+        "authors",
+        "tags",
+        "taxonomyVersion",
+        "extractorVersion",
+        "extractionId",
+        "extractionPath",
+        "extractionRevision",
+        "constructMappings",
+        "findings",
+        "methodology",
+        "verificationSummary",
+        "staleness",
+        "indexedAt"
+      ],
+      "properties": {
+        "paperId": {
+          "$ref": "common.schema.json#/definitions/paperId"
+        },
+        "paperPath": {
+          "$ref": "common.schema.json#/definitions/projectRelativePath"
+        },
+        "paperGraphHash": {
+          "$ref": "common.schema.json#/definitions/sha256"
+        },
+        "sourceDocumentHash": {
+          "$ref": "common.schema.json#/definitions/sha256"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authors": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "publicationYear": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 9999
+        },
+        "doi": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "taxonomyVersion": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "extractorVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "extractionId": {
+          "type": "string",
+          "pattern": "^extraction_[A-Za-z0-9_-]+$"
+        },
+        "extractionPath": {
+          "$ref": "common.schema.json#/definitions/projectRelativePath"
+        },
+        "extractionRevision": {
+          "$ref": "common.schema.json#/definitions/sha256"
+        },
+        "constructMappings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/constructMapping"
+          }
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/finding"
+          }
+        },
+        "methodology": {
+          "$ref": "#/definitions/methodology"
+        },
+        "verificationSummary": {
+          "$ref": "#/definitions/verificationSummary"
+        },
+        "staleness": {
+          "$ref": "#/definitions/staleness"
+        },
+        "indexedAt": {
+          "$ref": "common.schema.json#/definitions/timestamp"
+        }
+      }
+    },
+    "constructMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mappingId",
+        "sourceTerm",
+        "mappingStatus",
+        "findingIds",
+        "evidenceIds",
+        "reviewState"
+      ],
+      "properties": {
+        "mappingId": {
+          "type": "string",
+          "pattern": "^mapping_[A-Za-z0-9_-]+$"
+        },
+        "sourceTerm": {
+          "type": "string",
+          "minLength": 1
+        },
+        "constructId": {
+          "$ref": "common.schema.json#/definitions/constructId"
+        },
+        "constructName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mappingStatus": {
+          "enum": [
+            "unmapped",
+            "pending",
+            "approved",
+            "rejected"
+          ]
+        },
+        "findingIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^finding_[A-Za-z0-9_-]+$"
+          }
+        },
+        "evidenceIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "common.schema.json#/definitions/evidenceId"
+          }
+        },
+        "reviewState": {
+          "$ref": "common.schema.json#/definitions/reviewState"
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "findingId",
+        "sourceText",
+        "constructMappingIds",
+        "evidenceIds",
+        "reviewState"
+      ],
+      "properties": {
+        "findingId": {
+          "type": "string",
+          "pattern": "^finding_[A-Za-z0-9_-]+$"
+        },
+        "nodeId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceText": {
+          "type": "string",
+          "minLength": 1
+        },
+        "constructMappingIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^mapping_[A-Za-z0-9_-]+$"
+          }
+        },
+        "evidenceIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "common.schema.json#/definitions/evidenceId"
+          }
+        },
+        "reviewState": {
+          "$ref": "common.schema.json#/definitions/reviewState"
+        }
+      }
+    },
+    "methodology": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "paradigmMappingStatus"
+      ],
+      "properties": {
+        "paradigmId": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "paradigmLabel": {
+          "type": "string",
+          "minLength": 1
+        },
+        "paradigmSourceTerm": {
+          "type": "string",
+          "minLength": 1
+        },
+        "paradigmMappingStatus": {
+          "enum": [
+            "unmapped",
+            "pending",
+            "approved",
+            "rejected"
+          ]
+        },
+        "researchApproach": {
+          "type": "string",
+          "minLength": 1
+        },
+        "analyticalTechnique": {
+          "type": "string",
+          "minLength": 1
+        },
+        "population": {
+          "type": "string",
+          "minLength": 1
+        },
+        "unitOfAnalysis": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sampleSize": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "verificationSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pendingSource",
+        "pendingInterpretation",
+        "pendingClassification",
+        "disputedClassification"
+      ],
+      "properties": {
+        "pendingSource": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pendingInterpretation": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pendingClassification": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "disputedClassification": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "staleness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "paperGraph",
+        "extraction",
+        "evidence"
+      ],
+      "properties": {
+        "paperGraph": {
+          "type": "boolean"
+        },
+        "extraction": {
+          "type": "boolean"
+        },
+        "evidence": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { access, mkdir } from 'fs/promises'
+import { access, mkdir, readFile } from 'fs/promises'
 import * as path from 'path'
 import { randomUUID } from 'crypto'
 import { AtomicJsonWriter } from './AtomicJsonWriter'
@@ -8,14 +8,24 @@ import { isFileError, readJsonDocument } from './documentIO'
 import { MutationAuditError, MutationRepository } from './MutationRepository'
 import { ProjectPathError, ProjectPathResolver } from './ProjectPathResolver'
 import { SchemaValidator } from './SchemaValidator'
-import { selectProjectSchemaMode } from './SchemaVersionPolicy'
+import {
+  paperIndexSchemaName,
+  projectSchemaName,
+  selectProjectSchemaMode,
+} from './SchemaVersionPolicy'
+import {
+  createEmptyExtraction,
+  createInitialMethodologyRegistry,
+} from './extractionDefaults'
 import {
   Actor,
   APPLICATION_VERSION,
   Clock,
+  DOCUMENT_SCHEMA_VERSION,
   EvidenceIndexDocument,
   MutationEnvelope,
   MutationResult,
+  PAPER_INDEX_SCHEMA_VERSION,
   PaperIndexDocument,
   PaperRegistration,
   PROJECT_SCHEMA_VERSION,
@@ -42,7 +52,11 @@ export class ProjectRegistry {
     const manifestPath = path.join(projectRoot, MANIFEST_FILE)
     await assertManifestAbsent(manifestPath)
     const manifest = buildInitialManifest(projectId, title, this.clock.now())
-    const diagnostics = this.schemas.validate('project.schema.json', manifest, MANIFEST_FILE)
+    const diagnostics = this.schemas.validate(
+      projectSchemaName(manifest.schema.version),
+      manifest,
+      MANIFEST_FILE
+    )
     if (hasErrors(diagnostics)) return { mode: 'read-only', diagnostics, hydrationCount: 0 }
     await this.writeInitialProject(projectRoot, manifest)
     return this.open(manifestPath)
@@ -50,10 +64,11 @@ export class ProjectRegistry {
 
   public async open(manifestPath: string): Promise<ProjectOpenResult> {
     const projectRoot = path.dirname(manifestPath)
+    const schemaName = await detectManifestSchema(manifestPath)
     const manifestRead = await readJsonDocument<ProjectManifest>(
       manifestPath,
       MANIFEST_FILE,
-      'project.schema.json',
+      schemaName,
       this.schemas
     )
     if (!manifestRead.value) {
@@ -89,12 +104,29 @@ export class ProjectRegistry {
     const diagnostics = await this.validateNewRegistration(projectRoot, manifest, registration)
     if (hasErrors(diagnostics)) return registrationRejected(registration, baseRevision, diagnostics)
     const envelope = buildRegistrationEnvelope(manifest, registration, baseRevision, actor, this.clock.now())
-    return this.mutations.apply(projectRoot, envelope, {
-      schemaName: 'project.schema.json',
-      auditPath: manifest.documents.auditLog,
-      auditAction: 'paper.registered',
-      auditObjectId: registration.paperId,
-    })
+    let extractionCreated = false
+    try {
+      extractionCreated = await this.createRegistrationExtraction(
+        projectRoot,
+        manifest,
+        registration
+      )
+      const result = await this.mutations.apply(projectRoot, envelope, {
+        schemaName: projectSchemaName(manifest.schema.version),
+        auditPath: manifest.documents.auditLog,
+        auditAction: 'paper.registered',
+        auditObjectId: registration.paperId,
+      })
+      if (!result.accepted && extractionCreated) {
+        await this.removeRegistrationExtraction(projectRoot, registration)
+      }
+      return result
+    } catch (error) {
+      if (extractionCreated && !(error instanceof MutationAuditError)) {
+        await this.removeRegistrationExtraction(projectRoot, registration)
+      }
+      throw error
+    }
   }
 
   public async unregisterPaper(
@@ -108,7 +140,7 @@ export class ProjectRegistry {
     if (index < 0) return missingRegistrationRejected(paperId, baseRevision)
     const envelope = buildUnregistrationEnvelope(manifest, index, paperId, baseRevision, actor, this.clock.now())
     return this.mutations.apply(projectRoot, envelope, {
-      schemaName: 'project.schema.json',
+      schemaName: projectSchemaName(manifest.schema.version),
       auditPath: manifest.documents.auditLog,
       auditAction: 'paper.unregistered',
       auditObjectId: paperId,
@@ -263,7 +295,8 @@ export class ProjectRegistry {
 
   private async inspectRegistrationFiles(
     projectRoot: string,
-    registration: PaperRegistration
+    registration: PaperRegistration,
+    includeExtraction = true
   ): Promise<ProjectDiagnostic[]> {
     return [
       ...await inspectRegisteredPath(this.paths, projectRoot, registration.path, registration.paperId, 'paper'),
@@ -274,6 +307,15 @@ export class ProjectRegistry {
         registration.source.sourceId,
         'source'
       ),
+      ...(includeExtraction && registration.extractionPath
+        ? await inspectRegisteredPath(
+          this.paths,
+          projectRoot,
+          registration.extractionPath,
+          registration.paperId,
+          'extraction'
+        )
+        : []),
     ]
   }
 
@@ -288,7 +330,7 @@ export class ProjectRegistry {
     const paper = await this.loadOptionalIndex<PaperIndexDocument>(
       projectRoot,
       manifest.documents.paperIndex,
-      'paper-index.schema.json'
+      paperIndexSchemaName(manifest.schema.version)
     )
     const evidence = await this.loadOptionalIndex<EvidenceIndexDocument>(
       projectRoot,
@@ -322,12 +364,48 @@ export class ProjectRegistry {
     registration: PaperRegistration
   ): Promise<ProjectDiagnostic[]> {
     const candidate = { ...manifest, papers: [...manifest.papers, registration] }
-    const diagnostics = this.schemas.validate('project.schema.json', candidate, MANIFEST_FILE)
+    const diagnostics = this.schemas.validate(
+      projectSchemaName(manifest.schema.version),
+      candidate,
+      MANIFEST_FILE
+    )
     diagnostics.push(...documentPathDiagnostics(candidate))
     diagnostics.push(...duplicateRegistrationDiagnostics(candidate))
     diagnostics.push(...registrationPathCollisionDiagnostics(candidate))
-    diagnostics.push(...await this.inspectRegistrationFiles(projectRoot, registration))
+    diagnostics.push(...await this.inspectRegistrationFiles(projectRoot, registration, false))
     return diagnostics
+  }
+
+  private async createRegistrationExtraction(
+    projectRoot: string,
+    manifest: ProjectManifest,
+    registration: PaperRegistration
+  ): Promise<boolean> {
+    if (!registration.extractionPath) return false
+    const target = await this.paths.resolve(projectRoot, registration.extractionPath)
+    await assertFileAbsent(target)
+    const extraction = createEmptyExtraction(registration.paperId, this.clock.now())
+    await this.writeAuthoritativeDocument(
+      projectRoot,
+      manifest,
+      initialDocument(
+        registration.extractionPath,
+        'extraction.schema.json',
+        extraction
+      ),
+      'extraction.initialized',
+      extraction.extractionId
+    )
+    return true
+  }
+
+  private async removeRegistrationExtraction(
+    projectRoot: string,
+    registration: PaperRegistration
+  ): Promise<void> {
+    await this.writer.remove(
+      await this.paths.resolve(projectRoot, registration.extractionPath!)
+    )
   }
 }
 
@@ -345,6 +423,7 @@ function buildInitialManifest(projectId: string, title: string, now: string): Pr
       gaps: 'synthesis/gaps.json',
       researchQuestions: 'synthesis/research-questions.json',
       constructs: 'taxonomy/constructs.json',
+      methodologies: 'taxonomy/methodologies.json',
       evidence: 'evidence/records.json',
       paperIndex: 'indexes/papers.index.json',
       evidenceIndex: 'indexes/evidence.index.json',
@@ -374,7 +453,7 @@ function initialProjectTargets(
 function manifestDocument(manifest: ProjectManifest): InitialDocument {
   return {
     path: MANIFEST_FILE,
-    schema: 'project.schema.json',
+    schema: projectSchemaName(manifest.schema.version),
     value: manifest,
     authoritative: true,
   }
@@ -390,9 +469,22 @@ function initialDocuments(
     initialDocument(manifest.documents.gaps, 'gaps.schema.json', emptyDocument('nodegraph-gaps', 'gaps', now)),
     initialDocument(manifest.documents.researchQuestions, 'research-questions.schema.json', emptyDocument('nodegraph-research-questions', 'researchQuestions', now)),
     initialDocument(manifest.documents.constructs, 'construct-taxonomy.schema.json', emptyTaxonomy(now)),
+    initialDocument(
+      manifest.documents.methodologies!,
+      'methodology-registry.schema.json',
+      createInitialMethodologyRegistry(now)
+    ),
     initialDocument(manifest.documents.evidence, 'evidence-records.schema.json', emptyDocument('nodegraph-evidence-records', 'evidence', now)),
-    derivedDocument(manifest.documents.paperIndex, 'paper-index.schema.json', emptyIndex('nodegraph-paper-index', now)),
-    derivedDocument(manifest.documents.evidenceIndex, 'evidence-index.schema.json', emptyIndex('nodegraph-evidence-index', now)),
+    derivedDocument(
+      manifest.documents.paperIndex,
+      'paper-index-v1.1.schema.json',
+      emptyIndex('nodegraph-paper-index', PAPER_INDEX_SCHEMA_VERSION, now)
+    ),
+    derivedDocument(
+      manifest.documents.evidenceIndex,
+      'evidence-index.schema.json',
+      emptyIndex('nodegraph-evidence-index', DOCUMENT_SCHEMA_VERSION, now)
+    ),
   ]
 }
 
@@ -417,7 +509,7 @@ function buildCreationEnvelope(document: InitialDocument, now: string): Mutation
 
 function emptyDocument(schemaName: string, collection: string, now: string): unknown {
   return {
-    schema: { name: schemaName, version: PROJECT_SCHEMA_VERSION },
+    schema: { name: schemaName, version: DOCUMENT_SCHEMA_VERSION },
     [collection]: [],
     modified: now,
   }
@@ -425,16 +517,16 @@ function emptyDocument(schemaName: string, collection: string, now: string): unk
 
 function emptyTaxonomy(now: string): unknown {
   return {
-    schema: { name: 'nodegraph-construct-taxonomy', version: PROJECT_SCHEMA_VERSION },
+    schema: { name: 'nodegraph-construct-taxonomy', version: DOCUMENT_SCHEMA_VERSION },
     taxonomyVersion: 1,
     constructs: [],
     modified: now,
   }
 }
 
-function emptyIndex(schemaName: string, now: string): unknown {
+function emptyIndex(schemaName: string, version: string, now: string): unknown {
   return {
-    schema: { name: schemaName, version: PROJECT_SCHEMA_VERSION },
+    schema: { name: schemaName, version },
     generatedAt: now,
     entries: [],
   }
@@ -448,11 +540,14 @@ function duplicateRegistrationDiagnostics(manifest: ProjectManifest): ProjectDia
       .map(value => duplicateDiagnostic('duplicate-paper-path', value)),
     ...duplicates(manifest.papers.map(item => item.source.sourceId))
       .map(value => duplicateDiagnostic('duplicate-source-id', value)),
+    ...duplicates(manifest.papers.flatMap(item => item.extractionPath ?? []))
+      .map(value => duplicateDiagnostic('duplicate-extraction-path', value)),
   ]
 }
 
 function documentPathDiagnostics(manifest: ProjectManifest): ProjectDiagnostic[] {
   const paths = Object.values(manifest.documents)
+    .filter((value): value is string => typeof value === 'string')
   return [
     ...duplicates(paths).map(duplicateDocumentPathDiagnostic),
     ...paths
@@ -462,8 +557,14 @@ function documentPathDiagnostics(manifest: ProjectManifest): ProjectDiagnostic[]
 }
 
 function registrationPathCollisionDiagnostics(manifest: ProjectManifest): ProjectDiagnostic[] {
-  const ownedPaths = new Set([MANIFEST_FILE, ...Object.values(manifest.documents)])
-  return manifest.papers.flatMap(registration => [
+  const ownedPaths = new Set([
+    MANIFEST_FILE,
+    ...Object.values(manifest.documents)
+      .filter((value): value is string => typeof value === 'string'),
+  ])
+  return [
+    ...crossRegistrationPathCollisions(manifest),
+    ...manifest.papers.flatMap(registration => [
     ...(ownedPaths.has(registration.path)
       ? [registrationCollisionDiagnostic(registration.path, registration.paperId)]
       : []),
@@ -473,7 +574,27 @@ function registrationPathCollisionDiagnostics(manifest: ProjectManifest): Projec
         registration.source.sourceId
       )]
       : []),
+    ...(registration.extractionPath && ownedPaths.has(registration.extractionPath)
+      ? [registrationCollisionDiagnostic(
+        registration.extractionPath,
+        registration.paperId
+      )]
+      : []),
+    ]),
+  ]
+}
+
+function crossRegistrationPathCollisions(
+  manifest: ProjectManifest
+): ProjectDiagnostic[] {
+  const paths = manifest.papers.flatMap(registration => [
+    registration.path,
+    registration.source.relativePath,
+    ...(registration.extractionPath ? [registration.extractionPath] : []),
   ])
+  return duplicates(paths).map(relativePath =>
+    registrationCollisionDiagnostic(relativePath, relativePath)
+  )
 }
 
 function duplicates(values: string[]): string[] {
@@ -512,7 +633,7 @@ function registrationCollisionDiagnostic(
     file: MANIFEST_FILE,
     objectId,
     rule: `${relativePath} is already owned by the project manifest.`,
-    action: 'Choose a distinct contained path for the paper graph or source PDF.',
+    action: 'Choose a distinct contained path for the paper graph, source PDF, or extraction.',
   })
 }
 
@@ -547,7 +668,7 @@ async function inspectRegisteredPath(
   projectRoot: string,
   relativePath: string,
   objectId: string,
-  kind: 'paper' | 'source'
+  kind: 'paper' | 'source' | 'extraction'
 ): Promise<ProjectDiagnostic[]> {
   try {
     const target = await paths.resolve(projectRoot, relativePath, true)
@@ -561,7 +682,7 @@ async function inspectRegisteredPath(
 function registeredPathDiagnostic(
   file: string,
   objectId: string,
-  kind: 'paper' | 'source',
+  kind: 'paper' | 'source' | 'extraction',
   error: unknown
 ): ProjectDiagnostic {
   const pathCode = error instanceof ProjectPathError ? error.code : undefined
@@ -678,6 +799,24 @@ function missingRegistrationRejected(paperId: string, baseRevision: string): Mut
 
 async function assertManifestAbsent(manifestPath: string): Promise<void> {
   return assertFileAbsent(manifestPath)
+}
+
+async function detectManifestSchema(manifestPath: string): Promise<string> {
+  try {
+    const parsed = JSON.parse(await readFile(manifestPath, 'utf8')) as {
+      schema?: { version?: unknown }
+      papers?: Array<{ extractionPath?: unknown }>
+      documents?: { methodologies?: unknown }
+    }
+    const version = typeof parsed.schema?.version === 'string'
+      ? parsed.schema.version
+      : PROJECT_SCHEMA_VERSION
+    const phase2Shape = parsed.documents?.methodologies !== undefined
+      || parsed.papers?.some(paper => paper.extractionPath !== undefined)
+    return phase2Shape ? 'project-v1.1.schema.json' : projectSchemaName(version)
+  } catch {
+    return projectSchemaName(PROJECT_SCHEMA_VERSION)
+  }
 }
 
 async function assertFileAbsent(target: string): Promise<void> {

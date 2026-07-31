@@ -25,7 +25,7 @@ export async function readJsonDocument<T>(
   if (!parsed.value) return { diagnostics: parsed.diagnostics }
   const diagnostics = [
     ...schemas.validate(schemaName, parsed.value, displayPath),
-    ...inspectSupportedSchemaVersion(parsed.value, displayPath),
+    ...inspectSupportedSchemaVersion(parsed.value, displayPath, schemaName),
   ]
   return hasErrors(diagnostics)
     ? { diagnostics }

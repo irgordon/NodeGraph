@@ -23,6 +23,13 @@ All notable changes to this project will be documented in this file.
 - Per-document revision checks, atomic JSON writes, and stale-write rejection.
 - Append-only Phase 1 audit events with visible handling of a truncated final line.
 - Integration coverage for lazy opening, legacy graphs, recovery, provenance, and safe writes.
+- Authoritative standardized extraction records with source language, normalized values, methodology, findings, evidence references, and distinct reporting states.
+- Governed construct and methodological-paradigm proposals with researcher-only approval, alias resolution, and non-destructive construct merging.
+- Independent source, interpretation, and classification verification with a PDF-backed source-review queue.
+- A disposable Phase 2 matrix summary index, lazy cell hydration, normalized filters, and graph-selection synchronization.
+- Deterministic UTF-8 matrix CSV with stable identifiers, fixed columns, full quoting, and spreadsheet-formula protection.
+- An explicit researcher-invoked project migration from schema `1.0.0` to additive schema `1.1.0`.
+- Phase 2 contract fixtures and integration coverage for extraction, taxonomy, verification, migration, lazy matrix behavior, index recovery, and CSV safety.
 
 ### Changed
 
@@ -37,17 +44,29 @@ All notable changes to this project will be documented in this file.
 - Reported missing audit history and blocked known-unrecordable writes before replacement.
 - Normalized indexed and queried metadata with one shared policy.
 - Limited audit recovery blocking to the affected project and cleaned up files created by failed project initialization.
+- Extended the paper index through schema `1.1.0` with reconstructible extraction, taxonomy, methodology, finding, verification, and staleness summaries.
+- Kept matrix rendering and filtering on derived summaries while reading authoritative detail only for the selected cell.
+- Added a narrow stable-node selection bridge without moving project or persistence policy into the existing editor webview.
+- Prevented partial index rebuilds from reusing a matrix entry after its registered PDF changes.
+- Kept migrated extraction and methodology documents intact when derived-index invalidation reports a failure.
+- Routed registration-time extraction creation through the same absent-revision mutation and audit boundary as other authoritative initialization.
+- Required agent extraction classifications to retain AI origin and strengthened evidence-to-source registration checks.
+- Kept successful Phase 2 mutations visible when their follow-up disposable-index rebuild fails.
+- Preserved merged constructs' canonical terms as normalized primary aliases, rejected inactive merge sources, and recorded both construct IDs in merge audit events.
+- Defined a reviewable VSIX boundary that keeps runtime schemas, compiled assets, public templates, and graph examples while excluding internal instructions, generated environment copies, contract fixtures, source papers, generated demo exports, and unreferenced media.
 
 The Task 0 correction is not a migration. No released runtime created data using the incomplete contract.
+
+The Phase 2 schema change is a migration. Project schema `1.0.0` remains frozen; `1.1.0` adds authoritative extraction registrations and the methodology registry without changing legacy single-paper graphs.
 
 ### Compatibility
 
 - Existing single-paper graphs remain independently valid and editable.
 - Existing PDF quote checks and single-paper HTML export remain unchanged.
 - Opening a legacy graph does not register, migrate, or rewrite it.
-- Application version `0.0.0` remains independent from project schema version `1.0.0`.
+- Application version `0.0.0` remains independent from current project schema version `1.1.0`.
 
 ### Deferred
 
 - Product renaming and extension-identifier changes await an approved replacement identity.
-- Synthesis matrices, standardized extraction, claim and conflict review, gap workflows, merge UI, and synthesis exports remain later-phase work.
+- Claim and conflict workflows, evidence-quality weighting, gap analysis, research-question alignment, dissertation planning, merge UI, Excel export, and multi-document transactions remain later-phase work.
