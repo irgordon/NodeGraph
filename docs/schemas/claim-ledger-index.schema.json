@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Jeong-jin-Han/NodeGraph/main/docs/schemas/claim-ledger-index.schema.json",
+  "title": "NodeGraph Claim Ledger Index",
+  "description": "Disposable Phase 3 claim summaries reconstructed from authoritative synthesis records.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "generatedAt",
+    "manifestRevision",
+    "claimsRevision",
+    "conflictsRevision",
+    "appraisalsRevision",
+    "taxonomyVersion",
+    "sourceDocumentHashes",
+    "sourceFileHashes",
+    "extractionRevisions",
+    "entries"
+  ],
+  "properties": {
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "const": "nodegraph-claim-ledger-index" },
+        "version": { "const": "1.2.0" }
+      }
+    },
+    "generatedAt": { "$ref": "common.schema.json#/definitions/timestamp" },
+    "manifestRevision": { "$ref": "common.schema.json#/definitions/sha256" },
+    "claimsRevision": { "$ref": "common.schema.json#/definitions/sha256" },
+    "conflictsRevision": { "$ref": "common.schema.json#/definitions/sha256" },
+    "appraisalsRevision": { "$ref": "common.schema.json#/definitions/sha256" },
+    "taxonomyVersion": { "type": "integer", "minimum": 1 },
+    "sourceDocumentHashes": {
+      "type": "object",
+      "additionalProperties": { "$ref": "common.schema.json#/definitions/sha256" }
+    },
+    "sourceFileHashes": {
+      "type": "object",
+      "description": "Raw hashes used to detect changes without loading every source record during normal ledger opening.",
+      "additionalProperties": { "$ref": "common.schema.json#/definitions/sha256" }
+    },
+    "extractionRevisions": {
+      "type": "object",
+      "additionalProperties": { "$ref": "common.schema.json#/definitions/sha256" }
+    },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/entry" }
+    }
+  },
+  "definitions": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "text",
+        "claimType",
+        "supportingPaperIds",
+        "dissentingPaperIds",
+        "conflictTypes",
+        "conflictReviewStates",
+        "contextSummary",
+        "confidenceLabel",
+        "confidenceStale",
+        "confidenceExplanationAvailable",
+        "reviewState",
+        "origin",
+        "warnings"
+      ],
+      "properties": {
+        "claimId": { "$ref": "common.schema.json#/definitions/claimId" },
+        "text": { "type": "string", "minLength": 1 },
+        "claimType": { "enum": ["synthesis", "single-study-proposition", "boundary-condition", "mechanism"] },
+        "supportingPaperIds": { "$ref": "#/definitions/paperIds" },
+        "dissentingPaperIds": { "$ref": "#/definitions/paperIds" },
+        "conflictTypes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["direct-empirical-inconsistency", "methodological-artifact", "contextual-divergence", "conceptual-disagreement"] }
+        },
+        "conflictReviewStates": {
+          "type": "array",
+          "items": { "enum": ["not-reviewed", "approved", "rejected"] }
+        },
+        "contextSummary": { "type": "array", "items": { "type": "string" } },
+        "confidenceLabel": { "enum": ["not-assessed", "low", "moderate", "high"] },
+        "confidenceStale": { "type": "boolean" },
+        "confidenceExplanationAvailable": { "type": "boolean" },
+        "reviewState": { "$ref": "common.schema.json#/definitions/reviewState" },
+        "origin": { "enum": ["human", "ai", "imported"] },
+        "warnings": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "paperIds": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "common.schema.json#/definitions/paperId" }
+    }
+  }
+}

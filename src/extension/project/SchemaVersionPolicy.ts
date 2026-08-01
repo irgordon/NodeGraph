@@ -3,6 +3,8 @@ import {
   DOCUMENT_SCHEMA_VERSION,
   LEGACY_PROJECT_SCHEMA_VERSION,
   PAPER_INDEX_SCHEMA_VERSION,
+  PHASE2_PROJECT_SCHEMA_VERSION,
+  PHASE3_DOCUMENT_SCHEMA_VERSION,
   PROJECT_SCHEMA_VERSION,
   ProjectDiagnostic,
 } from './types'
@@ -14,6 +16,9 @@ export interface SchemaMode {
 
 export function selectProjectSchemaMode(version: string, file: string): SchemaMode {
   if (version === PROJECT_SCHEMA_VERSION) return { mode: 'read-write', diagnostics: [] }
+  if (version === PHASE2_PROJECT_SCHEMA_VERSION) {
+    return { mode: 'read-write', diagnostics: [phase3MigrationAvailableDiagnostic(file)] }
+  }
   if (version === LEGACY_PROJECT_SCHEMA_VERSION) {
     return {
       mode: 'read-only',
@@ -40,12 +45,14 @@ export function inspectSupportedSchemaVersion(
 
 export function projectSchemaName(version: string): string {
   return version === PROJECT_SCHEMA_VERSION
-    ? 'project-v1.1.schema.json'
-    : 'project.schema.json'
+    ? 'project-v1.2.schema.json'
+    : version === PHASE2_PROJECT_SCHEMA_VERSION
+      ? 'project-v1.1.schema.json'
+      : 'project.schema.json'
 }
 
 export function paperIndexSchemaName(version: string): string {
-  return version === PROJECT_SCHEMA_VERSION
+  return version === PROJECT_SCHEMA_VERSION || version === PHASE2_PROJECT_SCHEMA_VERSION
     ? 'paper-index-v1.1.schema.json'
     : 'paper-index.schema.json'
 }
@@ -78,7 +85,18 @@ function migrationRequiredDiagnostic(file: string): ProjectDiagnostic {
     code: 'migration-required',
     file,
     rule: `Project schema ${LEGACY_PROJECT_SCHEMA_VERSION} is preserved read-only.`,
-    action: `Run the Phase 2 project migration to schema ${PROJECT_SCHEMA_VERSION}.`,
+    action: `Run the Phase 2 project migration to schema ${PHASE2_PROJECT_SCHEMA_VERSION}, then upgrade to ${PROJECT_SCHEMA_VERSION}.`,
+  })
+}
+
+function phase3MigrationAvailableDiagnostic(file: string): ProjectDiagnostic {
+  return diagnostic({
+    layer: 'syntactic',
+    severity: 'warning',
+    code: 'phase3-migration-available',
+    file,
+    rule: `Project schema ${PHASE2_PROJECT_SCHEMA_VERSION} remains writable for Phase 2 operations.`,
+    action: `Run the researcher-confirmed Phase 3 migration before using claims, conflicts, appraisals, or the claim ledger.`,
   })
 }
 
@@ -101,9 +119,13 @@ function unsupportedDocumentVersionDiagnostic(
 }
 
 function supportedVersion(schemaName: string): string {
-  if (schemaName === 'project-v1.1.schema.json') return PROJECT_SCHEMA_VERSION
+  if (schemaName === 'project-v1.2.schema.json') return PROJECT_SCHEMA_VERSION
+  if (schemaName === 'project-v1.1.schema.json') return PHASE2_PROJECT_SCHEMA_VERSION
   if (schemaName === 'project.schema.json') return LEGACY_PROJECT_SCHEMA_VERSION
   if (schemaName === 'paper-index-v1.1.schema.json') return PAPER_INDEX_SCHEMA_VERSION
+  if (schemaName.endsWith('-v1.2.schema.json')) return PHASE3_DOCUMENT_SCHEMA_VERSION
+  if (schemaName === 'evidence-appraisals.schema.json') return PHASE3_DOCUMENT_SCHEMA_VERSION
+  if (schemaName === 'claim-ledger-index.schema.json') return PHASE3_DOCUMENT_SCHEMA_VERSION
   return DOCUMENT_SCHEMA_VERSION
 }
 

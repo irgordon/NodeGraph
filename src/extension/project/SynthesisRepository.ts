@@ -10,6 +10,7 @@ import { SchemaValidator } from './SchemaValidator'
 import {
   ConflictsDocument,
   ConstructTaxonomyDocument,
+  EvidenceAppraisalsDocument,
   EvidenceRecordsDocument,
   ExtractionDocument,
   GapsDocument,
@@ -20,6 +21,7 @@ import {
   ProjectManifest,
   ResearchQuestionsDocument,
   SynthesisClaimsDocument,
+  PROJECT_SCHEMA_VERSION,
 } from './types'
 
 interface DocumentContract {
@@ -51,7 +53,15 @@ export class SynthesisRepository {
     const diagnostics = collectReadDiagnostics(reads)
     if (!hasBundleValues(reads)) return { diagnostics }
     const bundle = bundleFromReads(reads)
-    diagnostics.push(...this.crossDocuments.validate(manifest, bundle))
+    const extractions = manifest.schema.version === PROJECT_SCHEMA_VERSION
+      ? await this.readExtractions(projectRoot, manifest)
+      : { values: new Map<string, ExtractionDocument>(), diagnostics: [] }
+    diagnostics.push(...extractions.diagnostics)
+    diagnostics.push(...this.crossDocuments.validate(
+      manifest,
+      bundle,
+      extractions.values
+    ))
     return { bundle, diagnostics }
   }
 
@@ -63,6 +73,42 @@ export class SynthesisRepository {
       projectRoot,
       manifest.documents.evidence,
       'evidence-records.schema.json'
+    )
+  }
+
+  public async readClaims(
+    projectRoot: string,
+    manifest: ProjectManifest
+  ): Promise<{ value?: SynthesisClaimsDocument; diagnostics: ProjectDiagnostic[] }> {
+    return this.readDocument(
+      projectRoot,
+      manifest.documents.claims,
+      claimSchemaName(manifest)
+    )
+  }
+
+  public async readConflicts(
+    projectRoot: string,
+    manifest: ProjectManifest
+  ): Promise<{ value?: ConflictsDocument; diagnostics: ProjectDiagnostic[] }> {
+    return this.readDocument(
+      projectRoot,
+      manifest.documents.conflicts,
+      conflictSchemaName(manifest)
+    )
+  }
+
+  public async readAppraisals(
+    projectRoot: string,
+    manifest: ProjectManifest
+  ): Promise<{ value?: EvidenceAppraisalsDocument; diagnostics: ProjectDiagnostic[] }> {
+    if (!manifest.documents.appraisals) {
+      return { diagnostics: [missingPhase3Document('appraisals')] }
+    }
+    return this.readDocument(
+      projectRoot,
+      manifest.documents.appraisals,
+      'evidence-appraisals.schema.json'
     )
   }
 
@@ -196,7 +242,14 @@ export class SynthesisRepository {
     const read = await this.readBundle(projectRoot, manifest)
     if (!read.bundle) return read.diagnostics
     const bundle = replaceValidatedBundleDocument(read.bundle, contract.key, candidate)
-    return this.crossDocuments.validate(manifest, bundle)
+    const extractions = manifest.schema.version === PROJECT_SCHEMA_VERSION
+      ? await this.readExtractions(projectRoot, manifest)
+      : { values: new Map<string, ExtractionDocument>(), diagnostics: [] }
+    return [
+      ...read.diagnostics,
+      ...extractions.diagnostics,
+      ...this.crossDocuments.validate(manifest, bundle, extractions.values),
+    ]
   }
 
   private async validateExtractionCandidate(
@@ -239,16 +292,16 @@ export class SynthesisRepository {
     projectRoot: string,
     manifest: ProjectManifest
   ): Promise<BundleReads> {
-    const [claims, conflicts, gaps, researchQuestions, constructs, evidence] = await Promise.all([
+    const [claims, conflicts, gaps, researchQuestions, constructs, evidence, appraisals] = await Promise.all([
       this.readDocument<SynthesisClaimsDocument>(
         projectRoot,
         manifest.documents.claims,
-        'synthesis-claims.schema.json'
+        claimSchemaName(manifest)
       ),
       this.readDocument<ConflictsDocument>(
         projectRoot,
         manifest.documents.conflicts,
-        'conflicts.schema.json'
+        conflictSchemaName(manifest)
       ),
       this.readDocument<GapsDocument>(
         projectRoot,
@@ -270,8 +323,34 @@ export class SynthesisRepository {
         manifest.documents.evidence,
         'evidence-records.schema.json'
       ),
+      manifest.documents.appraisals
+        ? this.readDocument<EvidenceAppraisalsDocument>(
+          projectRoot,
+          manifest.documents.appraisals,
+          'evidence-appraisals.schema.json'
+        )
+        : Promise.resolve({ diagnostics: [] }),
     ])
-    return { claims, conflicts, gaps, researchQuestions, constructs, evidence }
+    return { claims, conflicts, gaps, researchQuestions, constructs, evidence, appraisals }
+  }
+
+  private async readExtractions(
+    projectRoot: string,
+    manifest: ProjectManifest
+  ): Promise<{
+    values: Map<string, ExtractionDocument>
+    diagnostics: ProjectDiagnostic[]
+  }> {
+    const reads = await Promise.all(manifest.papers.map(async registration => ({
+      paperId: registration.paperId,
+      read: await this.readExtraction(projectRoot, registration),
+    })))
+    return {
+      values: new Map(reads.flatMap(item => item.read.value
+        ? [[item.paperId, item.read.value] as const]
+        : [])),
+      diagnostics: reads.flatMap(item => item.read.diagnostics),
+    }
   }
 }
 
@@ -287,6 +366,7 @@ interface BundleReads {
   researchQuestions: DocumentRead<ResearchQuestionsDocument>
   constructs: DocumentRead<ConstructTaxonomyDocument>
   evidence: DocumentRead<EvidenceRecordsDocument>
+  appraisals: DocumentRead<EvidenceAppraisalsDocument>
 }
 
 function collectReadDiagnostics(reads: BundleReads): ProjectDiagnostic[] {
@@ -296,19 +376,25 @@ function collectReadDiagnostics(reads: BundleReads): ProjectDiagnostic[] {
 function hasBundleValues(
   reads: BundleReads
 ): reads is { [Key in keyof BundleReads]: Required<BundleReads[Key]> } {
-  return Object.values(reads).every(read => read.value !== undefined)
+  return reads.claims.value !== undefined &&
+    reads.conflicts.value !== undefined &&
+    reads.gaps.value !== undefined &&
+    reads.researchQuestions.value !== undefined &&
+    reads.constructs.value !== undefined &&
+    reads.evidence.value !== undefined
 }
 
 function bundleFromReads(
-  reads: { [Key in keyof BundleReads]: Required<BundleReads[Key]> }
+  reads: BundleReads
 ): SynthesisBundle {
   return {
-    claims: reads.claims.value,
-    conflicts: reads.conflicts.value,
-    gaps: reads.gaps.value,
-    researchQuestions: reads.researchQuestions.value,
-    constructs: reads.constructs.value,
-    evidence: reads.evidence.value,
+    claims: reads.claims.value!,
+    conflicts: reads.conflicts.value!,
+    gaps: reads.gaps.value!,
+    researchQuestions: reads.researchQuestions.value!,
+    constructs: reads.constructs.value!,
+    evidence: reads.evidence.value!,
+    ...(reads.appraisals.value ? { appraisals: reads.appraisals.value } : {}),
   }
 }
 
@@ -330,13 +416,15 @@ function replaceValidatedBundleDocument(
       return { ...bundle, constructs: candidate as ConstructTaxonomyDocument }
     case 'evidence':
       return { ...bundle, evidence: candidate as EvidenceRecordsDocument }
+    case 'appraisals':
+      return { ...bundle, appraisals: candidate as EvidenceAppraisalsDocument }
   }
 }
 
 function authoritativeContracts(manifest: ProjectManifest): DocumentContract[] {
   return [
-    { key: 'claims', path: manifest.documents.claims, schema: 'synthesis-claims.schema.json', auditAction: 'synthesis.claims-mutated' },
-    { key: 'conflicts', path: manifest.documents.conflicts, schema: 'conflicts.schema.json', auditAction: 'synthesis.conflicts-mutated' },
+    { key: 'claims', path: manifest.documents.claims, schema: claimSchemaName(manifest), auditAction: 'synthesis.claims-mutated' },
+    { key: 'conflicts', path: manifest.documents.conflicts, schema: conflictSchemaName(manifest), auditAction: 'synthesis.conflicts-mutated' },
     { key: 'gaps', path: manifest.documents.gaps, schema: 'gaps.schema.json', auditAction: 'synthesis.gaps-mutated' },
     { key: 'researchQuestions', path: manifest.documents.researchQuestions, schema: 'research-questions.schema.json', auditAction: 'synthesis.questions-mutated' },
     { key: 'constructs', path: manifest.documents.constructs, schema: 'construct-taxonomy.schema.json', auditAction: 'taxonomy.constructs-mutated' },
@@ -349,6 +437,14 @@ function authoritativeContracts(manifest: ProjectManifest): DocumentContract[] {
       }]
       : []),
     { key: 'evidence', path: manifest.documents.evidence, schema: 'evidence-records.schema.json', auditAction: 'evidence.records-mutated' },
+    ...(manifest.documents.appraisals
+      ? [{
+        key: 'appraisals' as const,
+        path: manifest.documents.appraisals,
+        schema: 'evidence-appraisals.schema.json',
+        auditAction: 'evidence.appraisals-mutated',
+      }]
+      : []),
     ...manifest.papers.flatMap(paper => paper.extractionPath
       ? [{
         key: 'extraction' as const,
@@ -360,6 +456,18 @@ function authoritativeContracts(manifest: ProjectManifest): DocumentContract[] {
   ]
 }
 
+function claimSchemaName(manifest: ProjectManifest): string {
+  return manifest.schema.version === PROJECT_SCHEMA_VERSION
+    ? 'synthesis-claims-v1.2.schema.json'
+    : 'synthesis-claims.schema.json'
+}
+
+function conflictSchemaName(manifest: ProjectManifest): string {
+  return manifest.schema.version === PROJECT_SCHEMA_VERSION
+    ? 'conflicts-v1.2.schema.json'
+    : 'conflicts.schema.json'
+}
+
 function missingPhase2Document(name: string): ProjectDiagnostic {
   return {
     layer: 'syntactic',
@@ -369,6 +477,18 @@ function missingPhase2Document(name: string): ProjectDiagnostic {
     objectId: name,
     rule: 'The Phase 2 authoritative document is not registered.',
     action: 'Run the explicit Phase 2 project migration.',
+  }
+}
+
+function missingPhase3Document(name: string): ProjectDiagnostic {
+  return {
+    layer: 'syntactic',
+    severity: 'error',
+    code: 'phase3-document-not-registered',
+    file: 'project.nodegraph.json',
+    objectId: name,
+    rule: 'The Phase 3 authoritative document is not registered.',
+    action: 'Run the explicit Phase 3 project migration.',
   }
 }
 

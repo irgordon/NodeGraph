@@ -1,0 +1,34 @@
+{
+  "schema": { "name": "nodegraph-evidence-appraisals", "version": "1.2.0" },
+  "appraisals": [
+    {
+      "appraisalId": "appraisal_missing_source",
+      "paperId": "paper_001",
+      "sourceDocumentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "extractionRevision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "fields": {
+        "peerReviewed": { "status": "present", "evidenceIds": [] },
+        "studyDesign": { "status": "not-assessed", "evidenceIds": [] },
+        "sampleSize": { "status": "not-assessed", "evidenceIds": [] },
+        "samplingMethod": { "status": "not-assessed", "evidenceIds": [] },
+        "measurementValidity": { "status": "not-assessed", "evidenceIds": [] },
+        "reliability": { "status": "not-assessed", "evidenceIds": [] },
+        "studyTiming": { "status": "not-assessed", "evidenceIds": [] },
+        "selfReportDependence": { "status": "not-assessed", "evidenceIds": [] },
+        "replicationStatus": { "status": "not-assessed", "evidenceIds": [] },
+        "methodologicalLimitations": { "status": "not-assessed", "evidenceIds": [] },
+        "targetPopulationRelevance": { "status": "not-assessed", "evidenceIds": [] },
+        "methodologicalParadigm": { "status": "not-assessed", "evidenceIds": [] },
+        "analyticalTechnique": { "status": "not-assessed", "evidenceIds": [] }
+      },
+      "reviewState": {
+        "verification": { "source": "pending", "interpretation": "pending", "classification": "pending" },
+        "approval": { "researcher": "not-reviewed", "advisor": "not-reviewed" },
+        "origin": "ai"
+      },
+      "created": "2026-07-31T12:00:00.000Z",
+      "modified": "2026-07-31T12:00:00.000Z"
+    }
+  ],
+  "modified": "2026-07-31T12:00:00.000Z"
+}

@@ -1,0 +1,43 @@
+{
+  "schema": { "name": "nodegraph-claim-ledger-index", "version": "1.2.0" },
+  "generatedAt": "2026-07-31T12:00:00.000Z",
+  "manifestRevision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "claimsRevision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "conflictsRevision": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "appraisalsRevision": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "taxonomyVersion": 2,
+  "sourceDocumentHashes": {
+    "paper_001": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "paper_002": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+  },
+  "sourceFileHashes": {
+    "synthesis/claims-v1.2.json": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+    "evidence/records.json": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+  },
+  "extractionRevisions": {
+    "paper_001": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "paper_002": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+  },
+  "entries": [
+    {
+      "claimId": "claim_shared_leadership",
+      "text": "Shared leadership can improve trust.",
+      "claimType": "synthesis",
+      "supportingPaperIds": ["paper_001"],
+      "dissentingPaperIds": ["paper_002"],
+      "conflictTypes": ["contextual-divergence"],
+      "conflictReviewStates": ["not-reviewed"],
+      "contextSummary": ["setting: different"],
+      "confidenceLabel": "not-assessed",
+      "confidenceStale": false,
+      "confidenceExplanationAvailable": false,
+      "reviewState": {
+        "verification": { "source": "pending", "interpretation": "pending", "classification": "disputed" },
+        "approval": { "researcher": "not-reviewed", "advisor": "not-reviewed" },
+        "origin": "ai"
+      },
+      "origin": "ai",
+      "warnings": ["ai-proposal", "disputed-classification"]
+    }
+  ]
+}

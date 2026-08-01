@@ -25,6 +25,7 @@ export class ReviewStateService {
     return [
       ...validateApprovalChanges(before, after, actor, file),
       ...validateVerificationChanges(before, after, actor, file),
+      ...validateParadigmDecisionChanges(before, after, actor, file),
       ...validateAgentOrigins(before, after, actor, file),
     ]
   }
@@ -126,6 +127,24 @@ function validateAgentOrigins(
   })]
 }
 
+function validateParadigmDecisionChanges(
+  before: unknown,
+  after: unknown,
+  actor: Actor,
+  file: string
+): ProjectDiagnostic[] {
+  if (actor.type !== 'agent') return []
+  const changes = changedParadigmDecisions(before, after)
+  if (changes.every(change => !isResearcherParadigmDecision(change.after))) return []
+  return [diagnostic({
+    layer: 'structural',
+    code: 'paradigm-decision-authority-required',
+    file,
+    rule: 'Only a researcher may approve or reject a cross-paradigm decision.',
+    action: 'Keep the decision pending and submit it for researcher review.',
+  })]
+}
+
 interface ApprovalChange {
   before: unknown
   after: unknown
@@ -188,6 +207,27 @@ function collectReviewStates(
   return states
 }
 
+function changedParadigmDecisions(
+  before: unknown,
+  after: unknown
+): ApprovalChange[] {
+  const earlier = collectParadigmDecisions(before)
+  const later = collectParadigmDecisions(after)
+  const pointers = new Set([...Object.keys(earlier), ...Object.keys(later)])
+  return [...pointers]
+    .filter(pointer => JSON.stringify(earlier[pointer]) !== JSON.stringify(later[pointer]))
+    .map(pointer => ({ before: earlier[pointer], after: later[pointer] }))
+}
+
+function collectParadigmDecisions(
+  value: unknown,
+  pointer = ''
+): Record<string, unknown> {
+  const values: Record<string, unknown> = {}
+  walkParadigmDecisions(value, pointer, values)
+  return values
+}
+
 function walkApprovals(
   value: unknown,
   pointer: string,
@@ -238,6 +278,23 @@ function walkReviewStates(
   }
 }
 
+function walkParadigmDecisions(
+  value: unknown,
+  pointer: string,
+  values: Record<string, unknown>
+): void {
+  if (Array.isArray(value)) {
+    value.forEach((item, index) =>
+      walkParadigmDecisions(item, `${pointer}/${index}`, values))
+    return
+  }
+  if (!isObject(value)) return
+  for (const [key, child] of Object.entries(value)) {
+    if (key === 'paradigmDecision') values[`${pointer}/paradigmDecision`] = child
+    else walkParadigmDecisions(child, `${pointer}/${key}`, values)
+  }
+}
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object'
 }
@@ -256,6 +313,10 @@ function isPending(value: unknown): boolean {
 
 function isAiOrigin(value: unknown): boolean {
   return isObject(value) && value.origin === 'ai'
+}
+
+function isResearcherParadigmDecision(value: unknown): boolean {
+  return isObject(value) && (value.status === 'approved' || value.status === 'rejected')
 }
 
 function canVerify(actor: Actor): boolean {

@@ -1,6 +1,6 @@
 # NodeGraph — Synthesis Layer Roadmap
 
-**Status:** Phase 2 implemented in the 0.0.0 development baseline
+**Status:** Phase 3 implemented in the 0.0.0 development baseline
 **Related documents:** `ARCHITECTURE.md` · `SYNTHESIS_DOMAIN_MODEL.md` · `SYNTHESIS_WORKFLOWS.md`
 
 Schema validation, provenance integrity, and taxonomy normalization are load-bearing for every later phase and are not deferred — data accumulated before they exist would require costly migration once governance is retrofitted. Phases below reflect that ordering.
@@ -75,18 +75,26 @@ The Phase 1 baseline surface is deliberately small: VS Code commands exercise pr
 
 ## Phase 3 — Claims, conflicts, and evidence-quality weighting
 
-- Synthesis claim objects
-- Support/contradiction relationships with `conflictType` (`SYNTHESIS_DOMAIN_MODEL.md` §6)
-- Context comparisons, evidence-quality weighting (`SYNTHESIS_DOMAIN_MODEL.md` §7, §10)
-- Claim ledger
+**Status:** Implemented and covered by the Phase 3 contract and integration suites.
+
+- Authoritative synthesis claims with explicit finding relationships and exact evidence references
+- Typed conflict records that preserve support, dissent, qualification, and methodological divergence
+- Structured, non-causal context comparisons and researcher-governed evidence appraisal
+- Versioned explainable confidence policy without a universal numeric score
+- Claim ledger with rebuildable summaries that loads selected claim details on demand
+- Additive project schema `1.2.0` and an explicit researcher-invoked migration from frozen `1.1.0`
 
 ### Phase 3 exit criteria
 
-- Every synthesis claim resolves through paper-level findings to source evidence.
-- Conflicts carry an explicit type and preserve dissenting evidence.
-- Confidence explanations expose their rule inputs rather than only a score.
+- Every synthesis claim resolves through paper-level findings to exact source evidence.
+- Conflicts carry an explicit type and preserve dissenting evidence through review and reclassification.
+- Confidence explanations expose the policy, inputs, limitations, freshness, and resulting label.
+- The claim ledger opens without loading paper graphs and rebuilds from saved source records after index deletion.
+- Phase 1, Phase 2, and legacy single-paper behavior remain compatible.
 
 ## Phase 4 — Gap-to-question alignment + adversarial red-teaming
+
+**Entry condition:** The portability gate in `PORTABILITY.md` must pass before Phase 4 work begins. Phase 4 records use stable identifiers, project-relative paths, and reproducible corpus revisions rather than machine locations.
 
 - Population coverage, methodological gap analysis
 - Candidate gap detection
@@ -134,7 +142,7 @@ The original phase ordering (draft v0.1) placed schema validation and provenance
 - Construct-taxonomy drift compounds the longer normalization is left ungoverned — early papers processed without a taxonomy produce duplicate constructs that must be manually merged later.
 - The adversarial pass and researcher-approval boundary are trust mechanisms, not UI polish; shipping gap detection without them risks candidate gaps being treated as established findings in early usage.
 
-Everything after Phase 2 builds on a corpus that is already validated, normalized, and provenance-checked.
+Everything after Phase 3 builds on a corpus that is already validated, normalized, provenance-checked, and represented by reviewable cross-paper claims.
 
 ## Future / Not Yet Scoped
 

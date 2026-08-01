@@ -97,6 +97,30 @@
       {
         "command": "nodegraph.project.reviewConstructs",
         "title": "NodeGraph: Review Construct Proposals"
+      },
+      {
+        "command": "nodegraph.project.migratePhase3",
+        "title": "NodeGraph: Upgrade Project for Claims"
+      },
+      {
+        "command": "nodegraph.project.importClaim",
+        "title": "NodeGraph: Import Claim Proposal"
+      },
+      {
+        "command": "nodegraph.project.openClaimLedger",
+        "title": "NodeGraph: Open Claim Ledger"
+      },
+      {
+        "command": "nodegraph.project.reviewClaims",
+        "title": "NodeGraph: Review Claim Proposals"
+      },
+      {
+        "command": "nodegraph.project.reviewConflicts",
+        "title": "NodeGraph: Review Conflicts"
+      },
+      {
+        "command": "nodegraph.project.reviewAppraisals",
+        "title": "NodeGraph: Review Evidence Appraisal"
       }
     ],
     "menus": {
@@ -130,10 +154,12 @@
   "scripts": {
     "compile": "node esbuild.js",
     "typecheck": "tsc --noEmit",
-    "test": "npm run test:contracts && npm run test:phase1 && npm run test:phase2",
+    "test": "npm run test:contracts && npm run test:phase1 && npm run test:phase2 && npm run test:phase3 && npm run test:portability",
     "test:contracts": "node tools/validate-synthesis-contracts.js",
     "test:phase1": "node tools/run-phase1-tests.js",
     "test:phase2": "node tools/run-phase2-tests.js",
+    "test:phase3": "node tools/run-phase3-tests.js",
+    "test:portability": "node tools/run-portability-tests.js",
     "watch": "node esbuild.js --watch",
     "vscode:prepublish": "node esbuild.js --production"
   },

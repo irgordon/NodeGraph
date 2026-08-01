@@ -26,6 +26,7 @@ import {
   MutationEnvelope,
   MutationResult,
   PAPER_INDEX_SCHEMA_VERSION,
+  PHASE2_PROJECT_SCHEMA_VERSION,
   PaperIndexDocument,
   PaperRegistration,
   PROJECT_SCHEMA_VERSION,
@@ -411,7 +412,7 @@ export class ProjectRegistry {
 
 function buildInitialManifest(projectId: string, title: string, now: string): ProjectManifest {
   return {
-    schema: { name: 'nodegraph-project', version: PROJECT_SCHEMA_VERSION },
+    schema: { name: 'nodegraph-project', version: PHASE2_PROJECT_SCHEMA_VERSION },
     projectId,
     title,
     created: now,
@@ -806,13 +807,16 @@ async function detectManifestSchema(manifestPath: string): Promise<string> {
     const parsed = JSON.parse(await readFile(manifestPath, 'utf8')) as {
       schema?: { version?: unknown }
       papers?: Array<{ extractionPath?: unknown }>
-      documents?: { methodologies?: unknown }
+      documents?: { methodologies?: unknown; appraisals?: unknown }
     }
     const version = typeof parsed.schema?.version === 'string'
       ? parsed.schema.version
       : PROJECT_SCHEMA_VERSION
-    const phase2Shape = parsed.documents?.methodologies !== undefined
-      || parsed.papers?.some(paper => paper.extractionPath !== undefined)
+    if (version === PROJECT_SCHEMA_VERSION) return 'project-v1.2.schema.json'
+    if (version === PHASE2_PROJECT_SCHEMA_VERSION) return 'project-v1.1.schema.json'
+    if (parsed.documents?.appraisals !== undefined) return 'project-v1.2.schema.json'
+    const phase2Shape = parsed.documents?.methodologies !== undefined ||
+      parsed.papers?.some(paper => paper.extractionPath !== undefined)
     return phase2Shape ? 'project-v1.1.schema.json' : projectSchemaName(version)
   } catch {
     return projectSchemaName(PROJECT_SCHEMA_VERSION)

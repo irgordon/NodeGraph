@@ -1,10 +1,15 @@
 import { ConstructResolver } from './ConstructResolver'
+import { calculateDocumentRevision } from './canonical'
 import { diagnostic } from './diagnostics'
 import {
   ConflictsDocument,
   ConstructTaxonomyDocument,
+  EvidenceAppraisal,
+  EvidenceAppraisalsDocument,
+  EvidenceRecord,
   EvidenceRecordsDocument,
   ExtractionDocument,
+  ExtractionFinding,
   GapsDocument,
   MethodologyRegistryDocument,
   ProjectDiagnostic,
@@ -20,26 +25,34 @@ export interface SynthesisBundle {
   researchQuestions: ResearchQuestionsDocument
   constructs: ConstructTaxonomyDocument
   evidence: EvidenceRecordsDocument
+  appraisals?: EvidenceAppraisalsDocument
 }
 
 interface ReferenceIndexes {
   papers: Set<string>
   sources: Map<string, ProjectManifest['papers'][number]>
-  evidence: Set<string>
+  evidence: Map<string, EvidenceRecord>
   claims: Set<string>
   gaps: Set<string>
+  findings: Map<string, { finding: ExtractionFinding; extraction: ExtractionDocument }>
+  extractions: Map<string, ExtractionDocument>
 }
 
 export class CrossDocumentValidator {
   constructor(private readonly constructs: ConstructResolver) {}
 
-  public validate(manifest: ProjectManifest, bundle: SynthesisBundle): ProjectDiagnostic[] {
-    const indexes = buildIndexes(manifest, bundle)
+  public validate(
+    manifest: ProjectManifest,
+    bundle: SynthesisBundle,
+    extractions = new Map<string, ExtractionDocument>()
+  ): ProjectDiagnostic[] {
+    const indexes = buildIndexes(manifest, bundle, extractions)
     return [
       ...validateUniqueIdentifiers(bundle, manifest),
       ...validateEvidenceRecords(bundle, indexes, manifest),
       ...validateClaims(bundle, indexes, manifest, this.constructs),
       ...validateConflicts(bundle, indexes, manifest),
+      ...validateAppraisals(bundle.appraisals, indexes, manifest),
       ...validateGaps(bundle, indexes, manifest),
       ...validateQuestions(bundle, indexes, manifest),
     ]
@@ -216,13 +229,23 @@ function validateExtractionMethodology(
   )]
 }
 
-function buildIndexes(manifest: ProjectManifest, bundle: SynthesisBundle): ReferenceIndexes {
+function buildIndexes(
+  manifest: ProjectManifest,
+  bundle: SynthesisBundle,
+  extractions: Map<string, ExtractionDocument>
+): ReferenceIndexes {
   return {
     papers: new Set(manifest.papers.map(paper => paper.paperId)),
     sources: new Map(manifest.papers.map(paper => [paper.source.sourceId, paper])),
-    evidence: new Set(bundle.evidence.evidence.map(item => item.evidenceId)),
+    evidence: new Map(bundle.evidence.evidence.map(item => [item.evidenceId, item])),
     claims: new Set(bundle.claims.claims.map(item => item.claimId)),
     gaps: new Set(bundle.gaps.gaps.map(item => item.gapId)),
+    findings: new Map([...extractions].flatMap(([paperId, extraction]) =>
+      (extraction.fields.findings.items ?? []).map(finding => [
+        findingKey(paperId, finding.findingId),
+        { finding, extraction },
+      ]))),
+    extractions,
   }
 }
 
@@ -298,16 +321,140 @@ function validateClaims(
   manifest: ProjectManifest,
   constructs: ConstructResolver
 ): ProjectDiagnostic[] {
-  return bundle.claims.claims.flatMap(claim => [
-    ...claim.findingRefs
-      .filter(ref => !indexes.papers.has(ref.paperId))
-      .map(() => referenceDiagnostic('missing-paper-reference', manifest.documents.claims, claim.claimId)),
+  return bundle.claims.claims.flatMap(claim => {
+    const findings = claim.findingRefs.map(ref => ({
+      ref,
+      resolved: indexes.findings.get(findingKey(ref.paperId, ref.findingId)),
+    }))
+    return [
+      ...claim.findingRefs
+        .filter(ref => !indexes.papers.has(ref.paperId))
+        .map(() => referenceDiagnostic('missing-paper-reference', manifest.documents.claims, claim.claimId)),
+      ...findings
+        .filter(item => indexes.findings.size > 0 && !item.resolved)
+        .map(item => referenceDiagnostic('missing-finding-reference', manifest.documents.claims, item.ref.findingId)),
+      ...claim.evidenceRefs
+        .filter(id => !indexes.evidence.has(id))
+        .map(() => referenceDiagnostic('missing-evidence-reference', manifest.documents.claims, claim.claimId)),
+      ...claim.evidenceRefs.flatMap(id => validateClaimEvidenceHealth(
+        indexes.evidence.get(id),
+        claim.reviewState.approval.researcher === 'approved',
+        manifest.documents.claims,
+        id
+      )),
+      ...validateClaimEvidence(claim, findings, indexes, manifest),
+      ...validateClaimPaperBasis(claim, manifest.documents.claims),
+      ...validateClaimParadigms(claim, findings, manifest.documents.claims),
+      ...(claim.constructRefs ?? []).flatMap(id =>
+        validateApprovedConstruct(bundle.constructs, constructs, id, manifest.documents.claims)),
+    ]
+  })
+}
+
+function validateClaimEvidenceHealth(
+  evidence: EvidenceRecord | undefined,
+  approved: boolean,
+  file: string,
+  evidenceId: string
+): ProjectDiagnostic[] {
+  if (!evidence) return []
+  const source = evidence.reviewState.verification.source
+  if (source !== 'stale' && source !== 'rejected') return []
+  return [diagnostic({
+    layer: 'integrity',
+    severity: approved ? 'error' : 'warning',
+    code: source === 'stale' ? 'stale-claim-evidence' : 'rejected-claim-evidence',
+    file,
+    objectId: evidenceId,
+    rule: `Claim evidence ${evidenceId} is ${source}.`,
+    action: approved
+      ? 'Return the claim to review or restore a current verified evidence chain.'
+      : 'Keep the proposal visibly invalid until the evidence issue is reviewed.',
+  })]
+}
+
+function validateClaimEvidence(
+  claim: SynthesisClaimsDocument['claims'][number],
+  findings: Array<{
+    ref: SynthesisClaimsDocument['claims'][number]['findingRefs'][number]
+    resolved?: { finding: ExtractionFinding; extraction: ExtractionDocument }
+  }>,
+  indexes: ReferenceIndexes,
+  manifest: ProjectManifest
+): ProjectDiagnostic[] {
+  const linkedEvidence = new Set(findings.flatMap(item =>
+    item.resolved?.finding.evidenceIds ?? []))
+  return [
     ...claim.evidenceRefs
-      .filter(id => !indexes.evidence.has(id))
-      .map(() => referenceDiagnostic('missing-evidence-reference', manifest.documents.claims, claim.claimId)),
-    ...(claim.constructRefs ?? [])
-      .flatMap(id => constructs.resolve(bundle.constructs, id, manifest.documents.claims).diagnostics),
-  ])
+      .filter(evidenceId => !linkedEvidence.has(evidenceId))
+      .map(evidenceId => referenceDiagnostic(
+        'claim-evidence-not-linked-to-finding',
+        manifest.documents.claims,
+        evidenceId
+      )),
+    ...findings.flatMap(item => {
+      if (!item.resolved) return []
+      const linked = item.resolved.finding.evidenceIds
+        .filter(evidenceId => claim.evidenceRefs.includes(evidenceId))
+      if (!linked.length) {
+        return [referenceDiagnostic(
+          'finding-evidence-chain-missing',
+          manifest.documents.claims,
+          item.ref.findingId
+        )]
+      }
+      return linked.flatMap(evidenceId => {
+        const evidence = indexes.evidence.get(evidenceId)
+        return !evidence || evidence.paperId === item.ref.paperId
+          ? []
+          : [referenceDiagnostic('evidence-paper-mismatch', manifest.documents.claims, evidenceId)]
+      })
+    }),
+  ]
+}
+
+function validateClaimPaperBasis(
+  claim: SynthesisClaimsDocument['claims'][number],
+  file: string
+): ProjectDiagnostic[] {
+  if (claim.claimType === 'single-study-proposition') return []
+  return new Set(claim.findingRefs.map(ref => ref.paperId)).size >= 2
+    ? []
+    : [referenceDiagnostic('cross-paper-basis-required', file, claim.claimId)]
+}
+
+function validateClaimParadigms(
+  claim: SynthesisClaimsDocument['claims'][number],
+  findings: Array<{ resolved?: { extraction: ExtractionDocument } }>,
+  file: string
+): ProjectDiagnostic[] {
+  const paradigms = new Set(findings.flatMap(item => {
+    const mapping = item.resolved?.extraction.methodology.methodologicalParadigm
+    return mapping?.mappingStatus === 'approved' && mapping.paradigmId
+      ? [mapping.paradigmId]
+      : []
+  }))
+  if (paradigms.size < 2) return []
+  if (
+    claim.paradigmDecision.required &&
+    (claim.reviewState.approval.researcher !== 'approved' ||
+      claim.paradigmDecision.status === 'approved')
+  ) return []
+  return [referenceDiagnostic('cross-paradigm-decision-required', file, claim.claimId)]
+}
+
+function validateApprovedConstruct(
+  taxonomy: ConstructTaxonomyDocument,
+  resolver: ConstructResolver,
+  constructId: string,
+  file: string
+): ProjectDiagnostic[] {
+  const resolved = resolver.resolve(taxonomy, constructId, file)
+  if (resolved.diagnostics.length) return resolved.diagnostics
+  const construct = taxonomy.constructs.find(item => item.constructId === resolved.constructId)
+  return construct?.status === 'approved'
+    ? []
+    : [referenceDiagnostic('construct-not-approved', file, constructId)]
 }
 
 function validateConflicts(
@@ -320,9 +467,108 @@ function validateConflicts(
       ? [referenceDiagnostic('missing-claim-reference', manifest.documents.conflicts, conflict.conflictId)]
       : []),
     ...conflict.findingRefs
-      .filter(ref => !indexes.papers.has(ref.paperId))
-      .map(() => referenceDiagnostic('missing-paper-reference', manifest.documents.conflicts, conflict.conflictId)),
+      .filter(ref => indexes.findings.size > 0 &&
+        !indexes.findings.has(findingKey(ref.paperId, ref.findingId)))
+      .map(() => referenceDiagnostic('missing-finding-reference', manifest.documents.conflicts, conflict.conflictId)),
+    ...(!conflict.findingRefs.some(ref => isDissenting(ref.relationship))
+      ? [referenceDiagnostic('conflict-dissent-required', manifest.documents.conflicts, conflict.conflictId)]
+      : []),
+    ...validateConflictFindingMembership(conflict, bundle, manifest),
+    ...validateContextReferences(conflict, manifest.documents.conflicts),
   ])
+}
+
+function validateConflictFindingMembership(
+  conflict: ConflictsDocument['conflicts'][number],
+  bundle: SynthesisBundle,
+  manifest: ProjectManifest
+): ProjectDiagnostic[] {
+  const claim = bundle.claims.claims.find(item => item.claimId === conflict.claimId)
+  if (!claim) return []
+  const claimRefs = new Set(claim.findingRefs.map(ref =>
+    findingKey(ref.paperId, ref.findingId)))
+  return conflict.findingRefs
+    .filter(ref => !claimRefs.has(findingKey(ref.paperId, ref.findingId)))
+    .map(ref => referenceDiagnostic(
+      'conflict-finding-not-in-claim',
+      manifest.documents.conflicts,
+      ref.findingId
+    ))
+}
+
+function validateContextReferences(
+  conflict: ConflictsDocument['conflicts'][number],
+  file: string
+): ProjectDiagnostic[] {
+  const comparisons = new Set(conflict.contextComparisons.map(item =>
+    item.contextComparisonId))
+  return conflict.possibleExplanations.flatMap(explanation =>
+    explanation.contextComparisonIds
+      .filter(id => !comparisons.has(id))
+      .map(id => referenceDiagnostic('missing-context-comparison', file, id)))
+}
+
+function isDissenting(relationship: string): boolean {
+  return [
+    'contradicts',
+    'qualifies',
+    'fails-to-replicate',
+    'uses-different-definition',
+    'uses-different-population',
+    'uses-different-method',
+  ].includes(relationship)
+}
+
+function validateAppraisals(
+  appraisals: EvidenceAppraisalsDocument | undefined,
+  indexes: ReferenceIndexes,
+  manifest: ProjectManifest
+): ProjectDiagnostic[] {
+  if (!appraisals || !manifest.documents.appraisals) return []
+  return [
+    ...duplicateIds(
+      appraisals.appraisals.map(item => item.appraisalId),
+      manifest.documents.appraisals
+    ),
+    ...duplicateIds(
+      appraisals.appraisals.map(item => item.paperId),
+      manifest.documents.appraisals
+    ),
+    ...appraisals.appraisals.flatMap(appraisal =>
+      validateAppraisal(appraisal, indexes, manifest)),
+  ]
+}
+
+function validateAppraisal(
+  appraisal: EvidenceAppraisal,
+  indexes: ReferenceIndexes,
+  manifest: ProjectManifest
+): ProjectDiagnostic[] {
+  const file = manifest.documents.appraisals!
+  const registration = manifest.papers.find(item => item.paperId === appraisal.paperId)
+  const evidenceIds = Object.values(appraisal.fields)
+    .flatMap(field => field.evidenceIds)
+  return [
+    ...(!registration
+      ? [referenceDiagnostic('missing-paper-reference', file, appraisal.appraisalId)]
+      : []),
+    ...(registration && registration.source.sourceDocumentHash !== appraisal.sourceDocumentHash
+      ? [referenceDiagnostic('stale-appraisal-source', file, appraisal.appraisalId)]
+      : []),
+    ...(indexes.extractions.has(appraisal.paperId) &&
+      calculateDocumentRevision(indexes.extractions.get(appraisal.paperId)) !== appraisal.extractionRevision
+      ? [referenceDiagnostic('stale-appraisal-extraction', file, appraisal.appraisalId)]
+      : []),
+    ...evidenceIds.flatMap(evidenceId => {
+      const evidence = indexes.evidence.get(evidenceId)
+      if (!evidence) {
+        return [referenceDiagnostic('missing-evidence-reference', file, evidenceId)]
+      }
+      return evidence.paperId === appraisal.paperId
+        ? []
+        : [referenceDiagnostic('evidence-paper-mismatch', file, evidenceId)]
+    }),
+  ]
 }
 
 function validateGaps(
@@ -372,4 +618,8 @@ function referenceDiagnostic(code: string, file: string, objectId: string): Proj
     rule: `${objectId} contains an unresolved or duplicated project reference.`,
     action: 'Restore the referenced authoritative object or correct the reference.',
   })
+}
+
+function findingKey(paperId: string, findingId: string): string {
+  return `${paperId}\u0000${findingId}`
 }

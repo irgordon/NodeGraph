@@ -951,7 +951,8 @@ async function synthesisProject(
 
 function createRuntime(writer?: AtomicJsonWriter): ProjectRuntime {
   return createProjectRuntime({
-    extensionRoot: REPOSITORY_ROOT,
+    schemaRoot: path.join(REPOSITORY_ROOT, 'docs', 'schemas'),
+    legacySchemaPath: path.join(REPOSITORY_ROOT, 'schema', 'nodegraph.schema.json'),
     clock: new FixedClock(),
     ...(writer ? { writer } : {}),
   })

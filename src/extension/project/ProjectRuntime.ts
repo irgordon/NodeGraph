@@ -1,4 +1,3 @@
-import * as path from 'path'
 import { AtomicJsonWriter } from './AtomicJsonWriter'
 import { AuditLog } from './AuditLog'
 import { ConstructResolver } from './ConstructResolver'
@@ -19,9 +18,16 @@ import { SynthesisRepository } from './SynthesisRepository'
 import { TaxonomyService } from './TaxonomyService'
 import { VerificationService } from './VerificationService'
 import { Clock, systemClock } from './types'
+import { ClaimService } from './ClaimService'
+import { ConflictService } from './ConflictService'
+import { EvidenceAppraisalService } from './EvidenceAppraisalService'
+import { ConfidenceService } from './ConfidenceService'
+import { ContextComparisonService } from './ContextComparisonService'
+import { ClaimLedgerQueryService } from './ClaimLedgerQueryService'
 
 export interface ProjectRuntimeOptions {
-  extensionRoot: string
+  schemaRoot: string
+  legacySchemaPath: string
   clock?: Clock
   writer?: AtomicJsonWriter
 }
@@ -42,12 +48,18 @@ export interface ProjectRuntime {
   taxonomy: TaxonomyService
   verification: VerificationService
   csv: MatrixCsvExporter
+  claims: ClaimService
+  conflicts: ConflictService
+  appraisals: EvidenceAppraisalService
+  confidence: ConfidenceService
+  contextComparisons: ContextComparisonService
+  claimLedger: ClaimLedgerQueryService
 }
 
 export function createProjectRuntime(options: ProjectRuntimeOptions): ProjectRuntime {
   const clock = options.clock ?? systemClock
   const paths = new ProjectPathResolver()
-  const schemas = createSchemaValidator(options.extensionRoot)
+  const schemas = new SchemaValidator(options.schemaRoot, options.legacySchemaPath)
   const writer = options.writer ?? new AtomicJsonWriter()
   const audit = new AuditLog(paths, schemas, clock)
   const papers = new PaperGraphRepository(paths, schemas)
@@ -74,6 +86,8 @@ export function createProjectRuntime(options: ProjectRuntimeOptions): ProjectRun
     schemas,
     writer,
     mutations,
+    synthesis,
+    crossDocuments,
     clock
   )
   const extractions = new ExtractionService(schemas, synthesis)
@@ -86,6 +100,20 @@ export function createProjectRuntime(options: ProjectRuntimeOptions): ProjectRun
     clock
   )
   const csv = new MatrixCsvExporter()
+  const claims = new ClaimService(synthesis, reviews, schemas, clock)
+  const conflicts = new ConflictService(synthesis, reviews, schemas, clock)
+  const appraisals = new EvidenceAppraisalService(synthesis, reviews, schemas, clock)
+  const confidence = new ConfidenceService()
+  const contextComparisons = new ContextComparisonService()
+  const claimLedger = new ClaimLedgerQueryService(
+    paths,
+    schemas,
+    writer,
+    synthesis,
+    integrity,
+    confidence,
+    clock
+  )
   return {
     paths,
     schemas,
@@ -102,12 +130,11 @@ export function createProjectRuntime(options: ProjectRuntimeOptions): ProjectRun
     taxonomy,
     verification,
     csv,
+    claims,
+    conflicts,
+    appraisals,
+    confidence,
+    contextComparisons,
+    claimLedger,
   }
-}
-
-function createSchemaValidator(extensionRoot: string): SchemaValidator {
-  return new SchemaValidator(
-    path.join(extensionRoot, 'docs', 'schemas'),
-    path.join(extensionRoot, 'schema', 'nodegraph.schema.json')
-  )
 }

@@ -1,6 +1,6 @@
 # NodeGraph — Synthesis Domain Model
 
-**Status:** v0.6 (Phase 2 extraction and matrix baseline)
+**Status:** v0.7 (Phase 3 claims and claim-ledger baseline)
 **Related documents:** `ARCHITECTURE.md` · `SYNTHESIS_WORKFLOWS.md` · `ROADMAP.md`
 
 This document owns the research concepts the synthesis layer models: evidence levels, constructs, findings, synthesis claims, conflict objects, mechanisms, context, boundary conditions, candidate gaps, research-question alignment, evidence appraisal, and methodological paradigms. It assumes the component boundaries, persistence model, and invariants defined in `ARCHITECTURE.md`.
@@ -28,7 +28,7 @@ Exact quotations
 Original PDFs
 ```
 
-Levels 1–2 build on existing NodeGraph 0.7.2 capabilities — paper-level nodes, source quotations, and PDF quote-jump verification — formalized into explicit evidence and interpretation objects. Level 3 remains proposed.
+Levels 1–2 build on existing NodeGraph 0.7.2 capabilities — paper-level nodes, source quotations, and PDF quote-jump verification — formalized into explicit evidence and interpretation objects. Phase 3 implements Level 3 as authoritative claims that resolve through extracted findings to exact evidence.
 
 ## 2. Standardized Extraction Schema
 
@@ -59,7 +59,6 @@ Every paper in a literature-review project exposes a common field set, so that c
 {
   "sourceTerm": "distributed team leadership",
   "normalizedConstruct": "shared leadership",
-  "confidence": 0.74,
   "mappingStatus": "pending"
 }
 ```
@@ -68,7 +67,7 @@ Each field has an explicit reporting status. `not-extracted` is the neutral init
 
 ## 3. Methodological Paradigm & Analytical Technique
 
-A quantitative paper reporting a structural-equation-model effect size and a qualitative phenomenological paper reporting thematic findings cannot be synthesized on the same baseline even when both address the same construct. Without explicit paradigm tagging, the matrix would silently equate incommensurable evidence types.
+A quantitative paper that reports a statistical effect and a qualitative paper that reports themes should not be treated as directly comparable, even when both address the same construct. The paradigm tag keeps these different kinds of evidence visible.
 
 ```json
 {
@@ -88,7 +87,7 @@ A quantitative paper reporting a structural-equation-model effect size and a qua
 
 The built-in paradigm registry may begin with `positivist`, `interpretive`, `critical`, and `pragmatist`, but those values are not universal or exhaustive. Project-approved additions use the same registry mechanism rather than bypassing normalization.
 
-Paradigm/approach is a visible dimension and filter in the Phase 2 synthesis matrix. It is planned as a claim-ledger dimension in Phase 3. Cross-paradigm synthesis claims are flagged for researcher review rather than merged automatically (Core Invariant 12, `ARCHITECTURE.md` §4).
+Paradigm and approach are visible in the Phase 2 matrix and the Phase 3 claim ledger. A claim that crosses paradigms needs an explicit researcher decision; NodeGraph never combines that evidence automatically (Core Invariant 12, `ARCHITECTURE.md` §4).
 
 ## 4. Construct Registry (Taxonomy)
 
@@ -149,6 +148,8 @@ Phase 2 implements papers × approved constructs plus one visible pending/unmapp
 
 These ten kebab-case values are the complete persisted vocabulary. UI labels may replace hyphens with spaces, but repositories never persist alternate spellings.
 
+A synthesis claim stores a stable identifier, text, claim type, explicit finding relationships, exact evidence references, approved construct references when applicable, a cross-paradigm decision, optional confidence explanation, multidimensional review state, origin, and timestamps. A normal `synthesis` claim needs findings from at least two distinct papers. `single-study-proposition` is the explicit one-paper exception. Every finding must exist in its paper's extraction and have at least one exact evidence record included by the claim.
+
 ```json
 {
   "conflictId": "conflict_014",
@@ -167,9 +168,24 @@ These ten kebab-case values are the complete persisted vocabulary. UI labels may
     }
   ],
   "possibleExplanations": [
-    { "type": "context", "value": "centralized military command structure" },
-    { "type": "measurement", "value": "self-reported performance" }
-  ]
+    {
+      "explanationId": "explanation_command_context",
+      "type": "context",
+      "text": "Centralized command may explain the different result.",
+      "contextComparisonIds": ["context_organization_type"],
+      "reviewState": {
+        "verification": { "source": "pending", "interpretation": "pending", "classification": "pending" },
+        "approval": { "researcher": "not-reviewed", "advisor": "not-reviewed" },
+        "origin": "ai"
+      }
+    }
+  ],
+  "contextComparisons": [],
+  "reviewState": {
+    "verification": { "source": "pending", "interpretation": "pending", "classification": "pending" },
+    "approval": { "researcher": "not-reviewed", "advisor": "not-reviewed" },
+    "origin": "ai"
+  }
 }
 ```
 
@@ -177,13 +193,15 @@ These ten kebab-case values are the complete persisted vocabulary. UI labels may
 
 **Rule:** disagreement is never flattened into a vote count. Five studies agreeing and one disagreeing does not mean the five are correct — the dissenting study may have the stronger design or more relevant population.
 
+Conflict creation is explicit, never inferred from relationship co-occurrence. Reclassification changes `conflictType` and records rationale but preserves every finding relationship, including dissent. Possible explanations remain separately reviewable proposals.
+
 ## 7. Context and Boundary-Condition Model
 
 Every finding links to structured context fields, answering *"under what conditions does this finding hold?"*:
 
 Country · Sector · Organization type · Military or civilian · Operational tempo · Team size · Hierarchy level · Workforce composition · Remote or colocated · Task complexity · Study year · Technology environment · Crisis or routine operations
 
-Context is surfaced as a possible explanation for divergent findings and feeds directly into `conflictType` classification (§6). It is never asserted as causal.
+Phase 3 comparisons emit `same`, `different`, `missing`, `not-reported`, or `unclear`, preserving source values beside normalized values. Values that are not recorded by the extraction contract remain `missing`; they are not invented. Context is surfaced as a possible explanation for divergent findings and can inform researcher classification of `conflictType` (§6). It never sets the type automatically and is never asserted as causal.
 
 ## 8. Mechanism Mapping
 
@@ -233,7 +251,7 @@ Allowed analytical statuses are `present`, `absent`, `not-reported`, `unclear`, 
 
 ## 10. Evidence-Quality Weighting
 
-Each paper carries structured appraisal fields: peer-reviewed status, study design, sample size, sampling method, measurement validity, reliability, longitudinal/cross-sectional, self-report dependence, replication status, methodological limitations, relevance to target population — plus the paradigm/technique fields in §3.
+The authoritative `synthesis/evidence-appraisals-v1.2.json` document stores per-paper appraisal records. Each record is bound to a source-document hash and extraction revision and carries structured fields for peer-reviewed status, study design, sample size, sampling method, measurement validity, reliability, study timing, self-report dependence, replication status, methodological limitations, target-population relevance, methodological paradigm, and analytical technique. Source wording is retained beside normalized values. `absent`, `not-reported`, `unclear`, and `not-assessed` remain distinct.
 
 ```
 Supporting studies: 8
@@ -243,15 +261,22 @@ Contradicting studies: 2
 Confidence: Moderate
 ```
 
-**Rule:** confidence labels are rule-based and explainable, never an unexplained model score.
+**Rule:** confidence labels are rule-based and explainable, never an unexplained model score. Agent-created appraisals remain proposals. Researcher approval of an appraisal is independent from source, interpretation, and classification verification.
 
 ```
-Moderate confidence because:
-- six studies report similar findings;
-- only two directly examine military teams;
-- five rely on cross-sectional self-report data;
-- no longitudinal studies were identified.
+Moderate confidence because the minimum evidence and reviewed appraisal inputs are available, but the high-confidence rule is not fully satisfied.
 ```
+
+### Confidence policy
+
+Phase 3 uses policy `nodegraph-evidence-confidence` version `1.0.0`. It returns only `not-assessed`, `low`, `moderate`, or `high` and stores the full explanation on the claim.
+
+- `not-assessed`: no supporting relationship exists; a referenced evidence record is missing, stale, or rejected; a current researcher-approved appraisal is missing; target-population relevance or methodological limitations are not assessed; or a required cross-paradigm decision is not approved.
+- `low`: minimum inputs are available, but reviewed high-relevance dissent has fewer than major limitations, all reviewed evidence has low target-population relevance, or all reviewed supporting evidence reports major methodological limitations.
+- `high`: at least two supporting papers remain, no dissenting paper or unresolved conflict remains, at least one reviewed appraisal has high target-population relevance, and reviewed measurement validity or reliability is adequate.
+- `moderate`: the minimum inputs are available and neither the low nor high rule applies.
+
+Unknown inputs never count as weak inputs. Study count alone cannot select a label, and a numerical majority cannot erase stronger dissent. The saved explanation includes the policy and version, finding references, appraisal IDs, support and dissent counts, appraisal statuses, conflict and paradigm state, stale/disputed/rejected/missing counts, plain-language reasons, reported limitations, source hashes, extraction/appraisal/conflict revisions, taxonomy version, and calculation time. A changed source, extraction, appraisal, conflict, or taxonomy state makes the prior explanation stale until it is explicitly recalculated.
 
 ## 11. Gap-to-Question Model
 
@@ -321,7 +346,9 @@ The backbone artifact for Chapter 2 drafting. One row per synthesis claim:
 | Synthesis claim | Support | Conflict | Context | Quality | Status |
 |---|---|---|---|---|---|
 | Shared leadership increases trust | 7 papers | 2 papers | Mostly civilian | Moderate | Reviewed |
-| Trust improves knowledge sharing | 9 papers | 1 paper | Broadly consistent | Strong | Reviewed |
+| Trust improves knowledge sharing | 9 papers | 1 paper | Broadly consistent | High | Reviewed |
 | Formal hierarchy suppresses expertise | 3 papers | 3 papers | Context dependent | Low | Open |
 
 Each thematic paragraph in the dissertation traces to one or more ledger claims.
+
+Phase 3 implements this as a rebuildable summary index backed by saved claims, conflicts, appraisals, extractions, and evidence. Opening a current ledger checks file hashes and loads no paper graph or exact evidence record. Selecting one row reads only that claim's related extraction and evidence detail. The ledger keeps AI origin, disputed classifications, unresolved conflicts, cross-paradigm decisions, `not-assessed`, and stale confidence visible rather than presenting them as approved conclusions.

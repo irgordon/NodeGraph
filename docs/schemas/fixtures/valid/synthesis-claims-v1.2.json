@@ -1,0 +1,71 @@
+{
+  "schema": { "name": "nodegraph-synthesis-claims", "version": "1.2.0" },
+  "claims": [
+    {
+      "claimId": "claim_shared_leadership",
+      "text": "Shared leadership can improve trust across studied settings.",
+      "claimType": "synthesis",
+      "findingRefs": [
+        { "paperId": "paper_001", "findingId": "finding_001", "relationship": "supports" },
+        { "paperId": "paper_002", "findingId": "finding_002", "relationship": "qualifies" }
+      ],
+      "evidenceRefs": ["evidence_001", "evidence_002"],
+      "constructRefs": ["construct_shared_leadership"],
+      "paradigmDecision": {
+        "required": true,
+        "status": "approved",
+        "rationale": "The researcher retained the paradigms as separate inputs.",
+        "decidedBy": "researcher",
+        "decidedAt": "2026-07-31T12:00:00.000Z"
+      },
+      "confidence": {
+        "policyId": "nodegraph-evidence-confidence",
+        "policyVersion": "1.0.0",
+        "label": "moderate",
+        "inputs": {
+          "findingRefs": [
+            { "paperId": "paper_001", "findingId": "finding_001", "relationship": "supports" },
+            { "paperId": "paper_002", "findingId": "finding_002", "relationship": "qualifies" }
+          ],
+          "appraisalIds": ["appraisal_001", "appraisal_002"],
+          "supportingStudyCount": 1,
+          "dissentingStudyCount": 1,
+          "targetPopulationRelevance": ["present", "present"],
+          "methodologicalLimitations": ["present", "present"],
+          "unresolvedConflict": false,
+          "crossParadigmDecision": "approved",
+          "staleCount": 0,
+          "disputedCount": 0,
+          "rejectedCount": 0,
+          "missingInputCount": 0
+        },
+        "reasons": ["Minimum reviewed inputs are available."],
+        "limitations": ["The contexts differ."],
+        "freshness": {
+          "sourceDocumentHashes": {
+            "paper_001": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "paper_002": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          "extractionRevisions": {
+            "paper_001": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "paper_002": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          "appraisalsRevision": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "conflictsRevision": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "taxonomyVersion": 2
+        },
+        "stale": false,
+        "staleReasons": [],
+        "calculatedAt": "2026-07-31T12:00:00.000Z"
+      },
+      "reviewState": {
+        "verification": { "source": "verified", "interpretation": "verified", "classification": "verified" },
+        "approval": { "researcher": "approved", "advisor": "not-reviewed" },
+        "origin": "human"
+      },
+      "created": "2026-07-31T12:00:00.000Z",
+      "modified": "2026-07-31T12:00:00.000Z"
+    }
+  ],
+  "modified": "2026-07-31T12:00:00.000Z"
+}

@@ -6,10 +6,10 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "--extensionDevelopmentPath=/home/hanjeongjin/Workspace_ubuntu/2026_self/dev/NodeGraph"
+        "--extensionDevelopmentPath=${workspaceFolder}"
       ],
       "outFiles": [
-        "/home/hanjeongjin/Workspace_ubuntu/2026_self/dev/NodeGraph/dist/**/*.js"
+        "${workspaceFolder}/dist/**/*.js"
       ],
       "preLaunchTask": "npm: compile"
     }

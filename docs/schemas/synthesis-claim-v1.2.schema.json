@@ -1,0 +1,163 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Jeong-jin-Han/NodeGraph/main/docs/schemas/synthesis-claim-v1.2.schema.json",
+  "title": "NodeGraph Phase 3 Synthesis Claim",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "claimId",
+    "text",
+    "claimType",
+    "findingRefs",
+    "evidenceRefs",
+    "paradigmDecision",
+    "reviewState",
+    "created",
+    "modified"
+  ],
+  "properties": {
+    "claimId": { "$ref": "common.schema.json#/definitions/claimId" },
+    "text": { "type": "string", "minLength": 1 },
+    "claimType": {
+      "enum": ["synthesis", "single-study-proposition", "boundary-condition", "mechanism"]
+    },
+    "findingRefs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "common.schema.json#/definitions/relatedFinding" }
+    },
+    "evidenceRefs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "common.schema.json#/definitions/evidenceId" }
+    },
+    "constructRefs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "common.schema.json#/definitions/constructId" }
+    },
+    "paradigmDecision": { "$ref": "#/definitions/paradigmDecision" },
+    "confidence": { "$ref": "#/definitions/confidence" },
+    "reviewState": { "$ref": "common.schema.json#/definitions/reviewState" },
+    "created": { "$ref": "common.schema.json#/definitions/timestamp" },
+    "modified": { "$ref": "common.schema.json#/definitions/timestamp" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "claimType": { "const": "synthesis" } } },
+      "then": { "properties": { "findingRefs": { "minItems": 2 } } }
+    }
+  ],
+  "definitions": {
+    "paradigmDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "status"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "status": { "enum": ["not-required", "pending", "approved", "rejected"] },
+        "rationale": { "type": "string", "minLength": 1 },
+        "decidedBy": { "type": "string", "minLength": 1 },
+        "decidedAt": { "$ref": "common.schema.json#/definitions/timestamp" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "required": { "const": true } } },
+          "then": { "properties": { "status": { "enum": ["pending", "approved", "rejected"] } } }
+        },
+        {
+          "if": { "properties": { "status": { "enum": ["approved", "rejected"] } } },
+          "then": { "required": ["rationale", "decidedBy", "decidedAt"] }
+        }
+      ]
+    },
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policyId",
+        "policyVersion",
+        "label",
+        "inputs",
+        "reasons",
+        "limitations",
+        "freshness",
+        "stale",
+        "staleReasons",
+        "calculatedAt"
+      ],
+      "properties": {
+        "policyId": { "const": "nodegraph-evidence-confidence" },
+        "policyVersion": { "const": "1.0.0" },
+        "label": { "enum": ["not-assessed", "low", "moderate", "high"] },
+        "inputs": { "$ref": "#/definitions/confidenceInputs" },
+        "reasons": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "limitations": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "freshness": { "$ref": "#/definitions/confidenceFreshness" },
+        "stale": { "type": "boolean" },
+        "staleReasons": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "calculatedAt": { "$ref": "common.schema.json#/definitions/timestamp" }
+      }
+    },
+    "confidenceInputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "findingRefs",
+        "appraisalIds",
+        "supportingStudyCount",
+        "dissentingStudyCount",
+        "targetPopulationRelevance",
+        "methodologicalLimitations",
+        "unresolvedConflict",
+        "crossParadigmDecision",
+        "staleCount",
+        "disputedCount",
+        "rejectedCount",
+        "missingInputCount"
+      ],
+      "properties": {
+        "findingRefs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "common.schema.json#/definitions/relatedFinding" }
+        },
+        "appraisalIds": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^appraisal_[A-Za-z0-9_-]+$" } },
+        "supportingStudyCount": { "type": "integer", "minimum": 0 },
+        "dissentingStudyCount": { "type": "integer", "minimum": 0 },
+        "targetPopulationRelevance": { "$ref": "#/definitions/appraisalStatuses" },
+        "methodologicalLimitations": { "$ref": "#/definitions/appraisalStatuses" },
+        "unresolvedConflict": { "type": "boolean" },
+        "crossParadigmDecision": { "enum": ["not-required", "pending", "approved", "rejected"] },
+        "staleCount": { "type": "integer", "minimum": 0 },
+        "disputedCount": { "type": "integer", "minimum": 0 },
+        "rejectedCount": { "type": "integer", "minimum": 0 },
+        "missingInputCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "appraisalStatuses": {
+      "type": "array",
+      "items": { "enum": ["present", "absent", "not-reported", "unclear", "not-assessed"] }
+    },
+    "confidenceFreshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceDocumentHashes",
+        "extractionRevisions",
+        "appraisalsRevision",
+        "conflictsRevision",
+        "taxonomyVersion"
+      ],
+      "properties": {
+        "sourceDocumentHashes": { "type": "object", "additionalProperties": { "$ref": "common.schema.json#/definitions/sha256" } },
+        "extractionRevisions": { "type": "object", "additionalProperties": { "$ref": "common.schema.json#/definitions/sha256" } },
+        "appraisalsRevision": { "$ref": "common.schema.json#/definitions/sha256" },
+        "conflictsRevision": { "$ref": "common.schema.json#/definitions/sha256" },
+        "taxonomyVersion": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

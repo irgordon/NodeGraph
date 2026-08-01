@@ -1,0 +1,107 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Jeong-jin-Han/NodeGraph/main/docs/schemas/evidence-appraisals.schema.json",
+  "title": "NodeGraph Evidence Appraisals",
+  "description": "Authoritative Phase 3 per-paper evidence appraisal records.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "appraisals", "modified"],
+  "properties": {
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "const": "nodegraph-evidence-appraisals" },
+        "version": { "const": "1.2.0" }
+      }
+    },
+    "appraisals": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/appraisal" }
+    },
+    "modified": { "$ref": "common.schema.json#/definitions/timestamp" }
+  },
+  "definitions": {
+    "status": { "enum": ["present", "absent", "not-reported", "unclear", "not-assessed"] },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "evidenceIds"],
+      "properties": {
+        "status": { "$ref": "#/definitions/status" },
+        "sourceText": { "type": "string", "minLength": 1 },
+        "normalizedValue": { "type": "string", "minLength": 1 },
+        "evidenceIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "common.schema.json#/definitions/evidenceId" }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "present" } } },
+          "then": { "required": ["sourceText", "normalizedValue"] }
+        }
+      ]
+    },
+    "fields": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "peerReviewed",
+        "studyDesign",
+        "sampleSize",
+        "samplingMethod",
+        "measurementValidity",
+        "reliability",
+        "studyTiming",
+        "selfReportDependence",
+        "replicationStatus",
+        "methodologicalLimitations",
+        "targetPopulationRelevance",
+        "methodologicalParadigm",
+        "analyticalTechnique"
+      ],
+      "properties": {
+        "peerReviewed": { "$ref": "#/definitions/field" },
+        "studyDesign": { "$ref": "#/definitions/field" },
+        "sampleSize": { "$ref": "#/definitions/field" },
+        "samplingMethod": { "$ref": "#/definitions/field" },
+        "measurementValidity": { "$ref": "#/definitions/field" },
+        "reliability": { "$ref": "#/definitions/field" },
+        "studyTiming": { "$ref": "#/definitions/field" },
+        "selfReportDependence": { "$ref": "#/definitions/field" },
+        "replicationStatus": { "$ref": "#/definitions/field" },
+        "methodologicalLimitations": { "$ref": "#/definitions/field" },
+        "targetPopulationRelevance": { "$ref": "#/definitions/field" },
+        "methodologicalParadigm": { "$ref": "#/definitions/field" },
+        "analyticalTechnique": { "$ref": "#/definitions/field" }
+      }
+    },
+    "appraisal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "appraisalId",
+        "paperId",
+        "sourceDocumentHash",
+        "extractionRevision",
+        "fields",
+        "reviewState",
+        "created",
+        "modified"
+      ],
+      "properties": {
+        "appraisalId": { "type": "string", "pattern": "^appraisal_[A-Za-z0-9_-]+$" },
+        "paperId": { "$ref": "common.schema.json#/definitions/paperId" },
+        "sourceDocumentHash": { "$ref": "common.schema.json#/definitions/sha256" },
+        "extractionRevision": { "$ref": "common.schema.json#/definitions/sha256" },
+        "fields": { "$ref": "#/definitions/fields" },
+        "reviewState": { "$ref": "common.schema.json#/definitions/reviewState" },
+        "created": { "$ref": "common.schema.json#/definitions/timestamp" },
+        "modified": { "$ref": "common.schema.json#/definitions/timestamp" }
+      }
+    }
+  }
+}
