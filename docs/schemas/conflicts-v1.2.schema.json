@@ -1,0 +1,145 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Jeong-jin-Han/NodeGraph/main/docs/schemas/conflicts-v1.2.schema.json",
+  "title": "NodeGraph Phase 3 Conflicts Document",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "conflicts", "modified"],
+  "properties": {
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "const": "nodegraph-conflicts" },
+        "version": { "const": "1.2.0" }
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/conflict" }
+    },
+    "modified": { "$ref": "common.schema.json#/definitions/timestamp" }
+  },
+  "definitions": {
+    "conflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conflictId",
+        "claimId",
+        "conflictType",
+        "findingRefs",
+        "possibleExplanations",
+        "contextComparisons",
+        "reviewState",
+        "created",
+        "modified"
+      ],
+      "properties": {
+        "conflictId": { "$ref": "common.schema.json#/definitions/conflictId" },
+        "claimId": { "$ref": "common.schema.json#/definitions/claimId" },
+        "conflictType": {
+          "enum": [
+            "direct-empirical-inconsistency",
+            "methodological-artifact",
+            "contextual-divergence",
+            "conceptual-disagreement"
+          ]
+        },
+        "findingRefs": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": { "$ref": "common.schema.json#/definitions/relatedFinding" }
+        },
+        "possibleExplanations": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/explanation" }
+        },
+        "contextComparisons": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/contextComparison" }
+        },
+        "classificationRationale": { "type": "string", "minLength": 1 },
+        "reviewState": { "$ref": "common.schema.json#/definitions/reviewState" },
+        "created": { "$ref": "common.schema.json#/definitions/timestamp" },
+        "modified": { "$ref": "common.schema.json#/definitions/timestamp" }
+      }
+    },
+    "explanation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["explanationId", "type", "text", "contextComparisonIds", "reviewState"],
+      "properties": {
+        "explanationId": { "type": "string", "pattern": "^explanation_[A-Za-z0-9_-]+$" },
+        "type": { "enum": ["context", "measurement", "method", "definition", "population", "other"] },
+        "text": { "type": "string", "minLength": 1 },
+        "contextComparisonIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^context_[A-Za-z0-9_-]+$" }
+        },
+        "reviewState": { "$ref": "common.schema.json#/definitions/reviewState" }
+      }
+    },
+    "contextComparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contextComparisonId", "dimension", "values", "result", "causalInference", "reviewState"],
+      "properties": {
+        "contextComparisonId": { "type": "string", "pattern": "^context_[A-Za-z0-9_-]+$" },
+        "dimension": {
+          "enum": [
+            "population",
+            "setting",
+            "country-or-sector",
+            "organization-type",
+            "military-or-civilian",
+            "workforce-composition",
+            "operational-tempo",
+            "team-or-sample-characteristics",
+            "hierarchy-level",
+            "remote-or-colocated",
+            "task-complexity",
+            "study-year",
+            "technology-environment",
+            "crisis-or-routine-operations",
+            "methodological-paradigm",
+            "research-approach",
+            "analytical-technique"
+          ]
+        },
+        "values": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/definitions/contextValue" }
+        },
+        "result": { "enum": ["same", "different", "missing", "not-reported", "unclear"] },
+        "causalInference": { "const": false },
+        "interpretation": { "type": "string", "minLength": 1 },
+        "reviewState": { "$ref": "common.schema.json#/definitions/reviewState" }
+      }
+    },
+    "contextValue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["paperId", "findingId", "reportingStatus"],
+      "properties": {
+        "paperId": { "$ref": "common.schema.json#/definitions/paperId" },
+        "findingId": { "type": "string", "minLength": 1 },
+        "reportingStatus": {
+          "enum": ["not-extracted", "present", "absent", "not-reported", "unclear", "not-applicable"]
+        },
+        "sourceValue": { "type": "string", "minLength": 1 },
+        "normalizedValue": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "reportingStatus": { "const": "present" } } },
+          "then": { "required": ["sourceValue"] }
+        }
+      ]
+    }
+  }
+}

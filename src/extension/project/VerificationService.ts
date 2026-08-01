@@ -89,6 +89,10 @@ export class VerificationService {
     if (!registration) {
       return { diagnostics: [missingEvidenceSourceRegistration(record)] }
     }
+    const health = await this.integrity.inspectSource(projectRoot, registration)
+    if (health.currentHash !== registration.source.sourceDocumentHash) {
+      return { diagnostics: [...evidence.diagnostics, ...health.diagnostics] }
+    }
     try {
       return {
         sourcePath: await this.paths.resolve(
@@ -98,7 +102,7 @@ export class VerificationService {
         ),
         quote: record.quote.text,
         page: record.locator.page,
-        diagnostics: evidence.diagnostics,
+        diagnostics: [...evidence.diagnostics, ...health.diagnostics],
       }
     } catch {
       return {

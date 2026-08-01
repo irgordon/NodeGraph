@@ -1,6 +1,8 @@
 import { access, lstat, realpath } from 'fs/promises'
 import * as path from 'path'
 
+type PathOperations = Pick<typeof path, 'isAbsolute' | 'relative' | 'sep'>
+
 export class ProjectPathError extends Error {
   constructor(public readonly code: string, candidate: string) {
     super(`${code}: ${candidate}`)
@@ -92,8 +94,18 @@ async function exists(candidate: string): Promise<boolean> {
 }
 
 function assertContained(root: string, target: string, candidate: string): void {
-  const relative = path.relative(root, target)
-  if (relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
+  if (!isPathContained(root, target)) {
     throw new ProjectPathError('path-outside-project', candidate)
   }
+}
+
+export function isPathContained(
+  root: string,
+  target: string,
+  operations: PathOperations = path
+): boolean {
+  const relative = operations.relative(root, target)
+  return relative !== '..' &&
+    !relative.startsWith(`..${operations.sep}`) &&
+    !operations.isAbsolute(relative)
 }

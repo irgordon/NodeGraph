@@ -9,8 +9,7 @@ const os = require('os');
 const esbuild = require('esbuild');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..');
-const DEFAULT_ROOT = '/media/hanjeongjin/T7/Workspace/Obsidian/2026_CAMEL';
-const rootDir = process.argv[2] ? path.resolve(process.argv[2]) : DEFAULT_ROOT;
+const rootDir = process.argv[2] ? path.resolve(process.argv[2]) : process.cwd();
 
 function bundleHtmlExporter() {
   const outfile = path.join(os.tmpdir(), 'nodegraph-htmlExporter.cjs');

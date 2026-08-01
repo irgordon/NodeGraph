@@ -7,6 +7,8 @@ import { Phase1ProjectService } from './project/Phase1ProjectService'
 import { registerProjectCommands } from './project/ProjectCommands'
 import { registerPhase2Commands } from './project/Phase2Commands'
 import { Phase2ProjectService } from './project/Phase2ProjectService'
+import { Phase3ProjectService } from './project/Phase3ProjectService'
+import { registerPhase3Commands } from './project/Phase3Commands'
 
 const RECOMMENDED_EXTENSIONS = [
   { id: 'tomoki1207.pdf', name: 'vscode-pdf (PDF Viewer)' },
@@ -60,15 +62,24 @@ async function createNewGraph(clickedUri?: vscode.Uri): Promise<void> {
 }
 
 export function activate(context: vscode.ExtensionContext): void {
-  const projectRuntime = createProjectRuntime({ extensionRoot: context.extensionPath })
+  const projectRuntime = createProjectRuntime({
+    schemaRoot: vscode.Uri.joinPath(context.extensionUri, 'docs', 'schemas').fsPath,
+    legacySchemaPath: vscode.Uri.joinPath(
+      context.extensionUri,
+      'schema',
+      'nodegraph.schema.json'
+    ).fsPath,
+  })
   const projectService = new Phase1ProjectService(projectRuntime)
   const phase2Service = new Phase2ProjectService(projectRuntime)
+  const phase3Service = new Phase3ProjectService(projectRuntime)
 
   context.subscriptions.push(
     NodeGraphEditorProvider.register(context)
   )
   registerProjectCommands(context, projectService)
   registerPhase2Commands(context, phase2Service)
+  registerPhase3Commands(context, phase3Service)
 
   // Ctrl+F in the NodeGraph editor opens the in-graph search bar.
   // VSCode intercepts Ctrl+F before the webview JS can see it, so we register

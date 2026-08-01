@@ -1,18 +1,5 @@
 import * as vscode from 'vscode'
-import * as cp from 'child_process'
-import * as path from 'path'
-
-function run(cmd: string): string {
-  try {
-    return cp.execSync(cmd, { timeout: 5000, stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim()
-  } catch {
-    return ''
-  }
-}
-
-function check(cmd: string): boolean {
-  return run(cmd) !== ''
-}
+import { checkTool, runTool } from './toolDiscovery'
 
 function buildEnvironmentReport(): string {
   const lines: string[] = []
@@ -24,26 +11,43 @@ function buildEnvironmentReport(): string {
   const arch = process.arch
 
   // --- Python ---
-  const py3 = run('python3 --version 2>&1') || run('python --version 2>&1')
-  const pyCmd = check('python3 --version 2>&1') ? 'python3' : check('python --version 2>&1') ? 'python' : ''
+  const py3 = runTool('python3', ['--version']) || runTool('python', ['--version'])
+  const pyCmd = checkTool('python3', ['--version'])
+    ? 'python3'
+    : checkTool('python', ['--version']) ? 'python' : ''
   const hasPy = pyCmd !== ''
 
   // --- PDF libraries ---
-  const hasFitz = hasPy && check(`${pyCmd} -c "import fitz" 2>&1 && echo ok`)
-  const fitzVer = hasFitz ? run(`${pyCmd} -c "import fitz; print(fitz.__version__)"`) : ''
-  const hasPlumber = hasPy && check(`${pyCmd} -c "import pdfplumber" 2>&1 && echo ok`)
-  const hasPdfminer = hasPy && check(`${pyCmd} -c "import pdfminer" 2>&1 && echo ok`)
+  const hasFitz = hasPy && checkTool(pyCmd, ['-c', 'import fitz; print("ok")'])
+  const fitzVer = hasFitz
+    ? runTool(pyCmd, ['-c', 'import fitz; print(fitz.__version__)'])
+    : ''
+  const hasPlumber = hasPy && checkTool(
+    pyCmd,
+    ['-c', 'import pdfplumber; print("ok")']
+  )
+  const hasPdfminer = hasPy && checkTool(
+    pyCmd,
+    ['-c', 'import pdfminer; print("ok")']
+  )
 
   // --- Image libraries ---
-  const hasPillow = hasPy && check(`${pyCmd} -c "from PIL import Image" 2>&1 && echo ok`)
-  const pillowVer = hasPillow ? run(`${pyCmd} -c "from PIL import __version__; print(__version__)"`) : ''
-  const hasCV2 = hasPy && check(`${pyCmd} -c "import cv2" 2>&1 && echo ok`)
+  const hasPillow = hasPy && checkTool(
+    pyCmd,
+    ['-c', 'from PIL import Image; print("ok")']
+  )
+  const pillowVer = hasPillow
+    ? runTool(pyCmd, ['-c', 'from PIL import __version__; print(__version__)'])
+    : ''
+  const hasCV2 = hasPy && checkTool(pyCmd, ['-c', 'import cv2; print("ok")'])
 
   // --- CLI tools ---
-  const hasPdftotext = check('pdftotext -v 2>&1 && echo ok') || check('pdftotext --help 2>&1 && echo ok')
-  const hasConvert = check('convert --version 2>&1 && echo ok')
-  const hasMagick = check('magick --version 2>&1 && echo ok')
-  const hasGhostscript = check('gs --version 2>&1 && echo ok') || check('gswin64c --version 2>&1 && echo ok')
+  const hasPdftotext = checkTool('pdftotext', ['-v']) ||
+    checkTool('pdftotext', ['--help'])
+  const hasConvert = checkTool('convert', ['--version'])
+  const hasMagick = checkTool('magick', ['--version'])
+  const hasGhostscript = checkTool('gs', ['--version']) ||
+    checkTool('gswin64c', ['--version'])
 
   const ok = (v: boolean | string) => v ? '✅' : '❌'
 

@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Jeong-jin-Han/NodeGraph/main/docs/schemas/synthesis-claims-v1.2.schema.json",
+  "title": "NodeGraph Phase 3 Synthesis Claims Document",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "claims", "modified"],
+  "properties": {
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "const": "nodegraph-synthesis-claims" },
+        "version": { "const": "1.2.0" }
+      }
+    },
+    "claims": {
+      "type": "array",
+      "items": { "$ref": "synthesis-claim-v1.2.schema.json" }
+    },
+    "modified": { "$ref": "common.schema.json#/definitions/timestamp" }
+  }
+}

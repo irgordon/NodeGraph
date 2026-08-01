@@ -28,6 +28,11 @@ const VALID_CASES = [
   ['methodology-registry.schema.json', 'valid/methodology-registry.json'],
   ['extraction.schema.json', 'valid/extraction.json'],
   ['paper-index-v1.1.schema.json', 'valid/paper-index-v1.1.json'],
+  ['project-v1.2.schema.json', 'valid/project-v1.2.nodegraph.json'],
+  ['synthesis-claims-v1.2.schema.json', 'valid/synthesis-claims-v1.2.json'],
+  ['conflicts-v1.2.schema.json', 'valid/conflicts-v1.2.json'],
+  ['evidence-appraisals.schema.json', 'valid/evidence-appraisals.json'],
+  ['claim-ledger-index.schema.json', 'valid/claim-ledger-index.json'],
 ]
 
 const INVALID_CASES = [
@@ -44,6 +49,10 @@ const INVALID_CASES = [
   ['project-v1.1.schema.json', 'invalid/project-v1.1-missing-extraction.json'],
   ['extraction.schema.json', 'invalid/extraction-present-without-source.json'],
   ['methodology-registry.schema.json', 'invalid/methodology-registry-unapproved-seed.json'],
+  ['project-v1.2.schema.json', 'invalid/project-v1.2-missing-appraisals.json'],
+  ['synthesis-claim-v1.2.schema.json', 'invalid/claim-incomplete-confidence-v1.2.json'],
+  ['conflicts-v1.2.schema.json', 'invalid/conflict-causal-context-v1.2.json'],
+  ['evidence-appraisals.schema.json', 'invalid/appraisal-present-without-source-v1.2.json'],
 ]
 
 function main() {

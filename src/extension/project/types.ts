@@ -2,11 +2,15 @@ import { NodeGraph } from '../../webview/types/graph'
 
 export const APPLICATION_VERSION = '0.0.0'
 export const LEGACY_PROJECT_SCHEMA_VERSION = '1.0.0'
-export const PROJECT_SCHEMA_VERSION = '1.1.0'
+export const PHASE2_PROJECT_SCHEMA_VERSION = '1.1.0'
+export const PROJECT_SCHEMA_VERSION = '1.2.0'
 export const DOCUMENT_SCHEMA_VERSION = '1.0.0'
 export const PAPER_INDEX_SCHEMA_VERSION = '1.1.0'
 export const EXTRACTION_SCHEMA_VERSION = '1.0.0'
 export const METHODOLOGY_SCHEMA_VERSION = '1.0.0'
+export const PHASE3_DOCUMENT_SCHEMA_VERSION = '1.2.0'
+export const CONFIDENCE_POLICY_ID = 'nodegraph-evidence-confidence'
+export const CONFIDENCE_POLICY_VERSION = '1.0.0'
 export const INDEXER_VERSION = APPLICATION_VERSION
 
 export interface SchemaHeader {
@@ -40,6 +44,8 @@ export interface ProjectDocuments {
   evidence: string
   paperIndex: string
   evidenceIndex: string
+  appraisals?: string
+  claimLedgerIndex?: string
   auditLog: string
 }
 
@@ -85,13 +91,77 @@ export interface EvidenceRecordsDocument {
 export interface FindingReference {
   paperId: string
   findingId: string
+  relationship: FindingRelationship
+}
+
+export type FindingRelationship =
+  | 'supports'
+  | 'partially-supports'
+  | 'contradicts'
+  | 'extends'
+  | 'qualifies'
+  | 'replicates'
+  | 'fails-to-replicate'
+  | 'uses-different-definition'
+  | 'uses-different-population'
+  | 'uses-different-method'
+
+export type ConfidenceLabel = 'not-assessed' | 'low' | 'moderate' | 'high'
+
+export interface ParadigmDecision {
+  required: boolean
+  status: 'not-required' | 'pending' | 'approved' | 'rejected'
+  rationale?: string
+  decidedBy?: string
+  decidedAt?: string
+}
+
+export interface ConfidenceFreshness {
+  sourceDocumentHashes: Record<string, string>
+  extractionRevisions: Record<string, string>
+  appraisalsRevision: string
+  conflictsRevision: string
+  taxonomyVersion: number
+}
+
+export interface ConfidenceResult {
+  policyId: string
+  policyVersion: string
+  label: ConfidenceLabel
+  inputs: {
+    findingRefs: FindingReference[]
+    appraisalIds: string[]
+    supportingStudyCount: number
+    dissentingStudyCount: number
+    targetPopulationRelevance: AppraisalStatus[]
+    methodologicalLimitations: AppraisalStatus[]
+    unresolvedConflict: boolean
+    crossParadigmDecision: ParadigmDecision['status']
+    staleCount: number
+    disputedCount: number
+    rejectedCount: number
+    missingInputCount: number
+  }
+  reasons: string[]
+  limitations: string[]
+  freshness: ConfidenceFreshness
+  stale: boolean
+  staleReasons: string[]
+  calculatedAt: string
 }
 
 export interface SynthesisClaim {
   claimId: string
+  text: string
+  claimType: 'synthesis' | 'single-study-proposition' | 'boundary-condition' | 'mechanism'
   findingRefs: FindingReference[]
   evidenceRefs: string[]
   constructRefs?: string[]
+  paradigmDecision: ParadigmDecision
+  confidence?: ConfidenceResult
+  reviewState: ReviewState
+  created: string
+  modified: string
 }
 
 export interface SynthesisClaimsDocument {
@@ -103,13 +173,184 @@ export interface SynthesisClaimsDocument {
 export interface ConflictRecord {
   conflictId: string
   claimId: string
+  conflictType: ConflictType
   findingRefs: FindingReference[]
+  possibleExplanations: ConflictExplanation[]
+  contextComparisons: ContextComparison[]
+  classificationRationale?: string
+  reviewState: ReviewState
+  created: string
+  modified: string
 }
+
+export type ConflictType =
+  | 'direct-empirical-inconsistency'
+  | 'methodological-artifact'
+  | 'contextual-divergence'
+  | 'conceptual-disagreement'
+
+export interface ConflictExplanation {
+  explanationId: string
+  type: 'context' | 'measurement' | 'method' | 'definition' | 'population' | 'other'
+  text: string
+  contextComparisonIds: string[]
+  reviewState: ReviewState
+}
+
+export type ContextComparisonResult =
+  | 'same'
+  | 'different'
+  | 'missing'
+  | 'not-reported'
+  | 'unclear'
+
+export interface ContextValue {
+  paperId: string
+  findingId: string
+  reportingStatus: ReportingStatus
+  sourceValue?: string
+  normalizedValue?: string
+}
+
+export interface ContextComparison {
+  contextComparisonId: string
+  dimension: ContextDimension
+  values: ContextValue[]
+  result: ContextComparisonResult
+  causalInference: false
+  interpretation?: string
+  reviewState: ReviewState
+}
+
+export type ContextDimension =
+  | 'population'
+  | 'setting'
+  | 'country-or-sector'
+  | 'organization-type'
+  | 'military-or-civilian'
+  | 'workforce-composition'
+  | 'operational-tempo'
+  | 'team-or-sample-characteristics'
+  | 'hierarchy-level'
+  | 'remote-or-colocated'
+  | 'task-complexity'
+  | 'study-year'
+  | 'technology-environment'
+  | 'crisis-or-routine-operations'
+  | 'methodological-paradigm'
+  | 'research-approach'
+  | 'analytical-technique'
 
 export interface ConflictsDocument {
   schema: SchemaHeader
   conflicts: ConflictRecord[]
   modified: string
+}
+
+export type AppraisalStatus =
+  | 'present'
+  | 'absent'
+  | 'not-reported'
+  | 'unclear'
+  | 'not-assessed'
+
+export interface AppraisalField {
+  status: AppraisalStatus
+  sourceText?: string
+  normalizedValue?: string
+  evidenceIds: string[]
+}
+
+export interface EvidenceAppraisal {
+  appraisalId: string
+  paperId: string
+  sourceDocumentHash: string
+  extractionRevision: string
+  fields: {
+    peerReviewed: AppraisalField
+    studyDesign: AppraisalField
+    sampleSize: AppraisalField
+    samplingMethod: AppraisalField
+    measurementValidity: AppraisalField
+    reliability: AppraisalField
+    studyTiming: AppraisalField
+    selfReportDependence: AppraisalField
+    replicationStatus: AppraisalField
+    methodologicalLimitations: AppraisalField
+    targetPopulationRelevance: AppraisalField
+    methodologicalParadigm: AppraisalField
+    analyticalTechnique: AppraisalField
+  }
+  reviewState: ReviewState
+  created: string
+  modified: string
+}
+
+export interface EvidenceAppraisalsDocument {
+  schema: SchemaHeader
+  appraisals: EvidenceAppraisal[]
+  modified: string
+}
+
+export interface ClaimLedgerEntry {
+  claimId: string
+  text: string
+  claimType: SynthesisClaim['claimType']
+  supportingPaperIds: string[]
+  dissentingPaperIds: string[]
+  conflictTypes: ConflictType[]
+  conflictReviewStates: ResearcherApproval[]
+  contextSummary: string[]
+  confidenceLabel: ConfidenceLabel
+  confidenceStale: boolean
+  confidenceExplanationAvailable: boolean
+  reviewState: ReviewState
+  origin: RecordOrigin
+  warnings: string[]
+}
+
+export interface ClaimLedgerIndexDocument {
+  schema: SchemaHeader
+  generatedAt: string
+  manifestRevision: string
+  claimsRevision: string
+  conflictsRevision: string
+  appraisalsRevision: string
+  taxonomyVersion: number
+  sourceDocumentHashes: Record<string, string>
+  sourceFileHashes: Record<string, string>
+  extractionRevisions: Record<string, string>
+  entries: ClaimLedgerEntry[]
+}
+
+export interface ClaimLedgerSummary {
+  entries: ClaimLedgerEntry[]
+}
+
+export interface ClaimLedgerDetail {
+  claim: SynthesisClaim
+  conflicts: ConflictRecord[]
+  appraisals: EvidenceAppraisal[]
+  findings: Array<{
+    paperId: string
+    paperTitle: string
+    relationship: FindingRelationship
+    paperMetadata: {
+      doi?: string
+      sourceVersion?: string
+    }
+    finding: ExtractionFinding
+    population: ReportedText
+    setting: ReportedText
+    methodology: ExtractionDocument['methodology']
+    evidence: EvidenceRecord[]
+  }>
+  revisions: {
+    claims: string
+    conflicts: string
+    appraisals: string
+  }
+  diagnostics: ProjectDiagnostic[]
 }
 
 export interface AdversarialPassRecord {

@@ -16,13 +16,15 @@ NodeGraph turns research PDFs into visual, source-backed notes. Use an AI agent 
 
 This fork begins a new NodeGraph application built for multi-paper research. It starts from the working NodeGraph 0.7.2 editor while beginning its own version history at 0.0.0.
 
-> **Development status:** Phase 2 is now implemented in the development branch. NodeGraph can organize paper graphs and PDFs, capture the same research and method fields for every paper, govern shared construct names, verify sources and interpretations separately, compare papers in a synthesis matrix, and export that matrix to safe CSV. Existing `.nodegraph.json` files keep their current format and continue to open, edit, verify, and export as before. Cross-paper claims, conflict analysis, gap testing, and dissertation planning are still planned.
+> **Development status:** Phase 3 is now implemented in the development branch. NodeGraph can organize paper graphs and PDFs, capture the same fields for every paper, compare papers in a synthesis matrix, build source-backed claims, record disagreements by type, review study quality, explain confidence labels, and browse a claim ledger. Existing `.nodegraph.json` files keep their current format and continue to open, edit, verify, and export as before. Gap testing, research-question alignment, and dissertation planning are still planned. This development build is not a Marketplace or fully installation-verified release.
 
 ---
 
 ## Built for Doctoral Research
 
-The workspace is designed to support doctoral-level work that examines many PDFs and analyzes the papers together. Phase 2 builds on the trusted project foundation with shared extraction fields, researcher-controlled terms, source review, and a paper-by-construct matrix. Each paper remains linked to its source PDF.
+The workspace is designed to support doctoral-level work that examines many PDFs and analyzes the papers together. Phase 3 builds on shared extraction and the paper-by-construct matrix with reviewable cross-paper claims, clear disagreement records, evidence appraisal, and confidence explanations. Each claim remains linked through paper findings and exact quotations to its source PDFs.
+
+Projects use relative file references, so a complete project folder can move between macOS, Linux, and Windows without keeping the original checkout or home-folder path. See [NodeGraph portability](docs/PORTABILITY.md) for the tested boundary.
 
 The full product direction will help you:
 
@@ -41,17 +43,21 @@ This approach is meant for literature reviews, dissertation planning, qualifying
 
 | Available now | Planned for later phases |
 |---|---|
-| Visual editing, PDF quote checks, and HTML export for one paper | Cross-paper claims and conflict review |
-| Local projects that register many paper graphs and PDFs | Claim ledgers and evidence weighting |
+| Visual editing, PDF quote checks, and HTML export for one paper | Excel and document exports |
+| Local projects that register many paper graphs and PDFs | Safe changes across several files at once |
 | Shared extraction fields for research, methods, populations, findings, and evidence | Gap testing and research-question workflows |
-| Researcher-controlled construct and method terms | Evidence-quality weighting and dissertation planning |
-| Source, interpretation, and classification review | Chapter outlines and later synthesis reports |
-| Lazy paper-by-construct matrix with filters and safe CSV export | Excel and document exports |
-| Checks for missing files, changed PDFs, stale quotes, and broken evidence links | Multi-document transactions and process locking |
-| Rebuildable paper, evidence, and matrix summary indexes | A visual workflow for merging competing edits |
-| Safe project writes with revision checks and an audit record | Gap testing and research-question workflows |
+| Researcher-controlled construct and method terms | Sharing taxonomies across projects |
+| Source, interpretation, and classification review | A full review dashboard |
+| Lazy paper-by-construct matrix with filters and safe CSV export | A visual screen for resolving competing edits |
+| Source-backed claims with explicit support, contradiction, qualification, replication, and extension links | Research-question alignment |
+| Conflicts grouped by type, with dissent and context differences kept visible | Population-gap and adversarial-review workflows |
+| Researcher-reviewed evidence appraisal and explained confidence labels | Dissertation section planning |
+| Lazy claim ledger with selected-claim evidence detail | APA-ready claim-ledger export |
+| Checks for missing files, changed PDFs, stale quotes, and broken evidence links | A source-verification report |
+| Rebuildable paper, evidence, matrix, and claim-ledger indexes | A methodology comparison report |
+| Safe project writes with revision checks and an audit record | Multi-process locking |
 
-Phase 2 provides a consistent way to extract, normalize, verify, compare, and export paper-level findings. Later phases will add research claims, conflict review, evidence weighting, gap testing, research-question support, and dissertation planning.
+Phase 3 provides a consistent way to extract, normalize, verify, compare, and review cross-paper claims without losing dissent or the source trail. Later phases will add gap testing, research-question support, and dissertation planning.
 
 Read the product and technical plans:
 
@@ -93,7 +99,7 @@ Read the product and technical plans:
 
 A paper is a straight line of text, but its ideas are connected. A finding may depend on a method, a population, an earlier claim, or a limit that appears many pages later. NodeGraph makes those links visible.
 
-The single-paper editor helps you take one paper apart and verify your notes against the source. The literature project organizes many of those graphs, searches their metadata, checks that their source trail remains intact, and compares extracted findings in one matrix. Later analysis tools will examine agreements, conflicts, limits, and missing evidence without blending every paper into one summary.
+The single-paper editor helps you take one paper apart and verify your notes against the source. The literature project organizes many of those graphs, searches their metadata, checks that their source trail remains intact, compares extracted findings in one matrix, and turns reviewed relationships into a claim ledger. Claims show their supporting and dissenting findings, context, evidence appraisal, and confidence explanation without blending every paper into one summary.
 
 AI can speed up the work, but the researcher stays in charge. AI-created extraction and classifications begin as suggestions, and only a researcher can approve shared terms. Important conclusions keep a clear path back to the PDFs that support them.
 
@@ -419,6 +425,16 @@ Images are stored in a `.<graphname>-imgs/` folder next to the JSON file.
 | `NodeGraph: Validate Literature Project` | — | Check files, paths, source hashes, evidence links, and index freshness |
 | `NodeGraph: Rebuild Project Indexes` | — | Recreate disposable paper and evidence indexes from authoritative files |
 | `NodeGraph: Search Project Papers` | — | Search indexed paper metadata across the project |
+| `NodeGraph: Upgrade Project for Extraction` | — | Explicitly upgrade project schema `1.0.0` to `1.1.0` |
+| `NodeGraph: Import Extraction Proposal` | — | Import a validated per-paper extraction proposal |
+| `NodeGraph: Open Synthesis Matrix` | — | Compare papers and approved constructs without loading every graph |
+| `NodeGraph: Verify Extracted Sources` | — | Review extracted evidence against its source PDF |
+| `NodeGraph: Upgrade Project for Claims` | — | Explicitly upgrade project schema `1.1.0` to `1.2.0` |
+| `NodeGraph: Import Claim Proposal` | — | Import a source-backed claim proposal |
+| `NodeGraph: Open Claim Ledger` | — | Browse claim summaries and load selected evidence detail |
+| `NodeGraph: Review Claim Proposals` | — | Approve or reject claim proposals as the researcher |
+| `NodeGraph: Review Conflicts` | — | Review typed conflicts without discarding dissent |
+| `NodeGraph: Review Evidence Appraisal` | — | Review structured appraisal proposals independently from source verification |
 
 ---
 
